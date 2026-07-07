@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fatia.3D — Precificação de Impressão 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F2F4F1; --surface:#FFFFFF; --ink:#16211E; --ink-soft:#5A6B66;
+    --line:#DCE2DD; --accent:#0B7A5B; --accent-soft:#E2F1EB;
+    --amber:#B97516; --amber-soft:#FBEFDB; --coral:#C2452D;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --disp:'Chakra Petch',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+
+  header{
+    position:sticky;top:0;z-index:50;border-bottom:1px solid var(--line);
+    background:repeating-linear-gradient(0deg,transparent 0 7px,rgba(11,122,91,.05) 7px 8px),var(--surface);
+  }
+  .topbar{max-width:1100px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  h1{font-family:var(--disp);font-size:24px;font-weight:700;white-space:nowrap}
+  h1 .dot{color:var(--accent)}
+  nav{display:flex;gap:4px;flex:1;min-width:0}
+  .nav-btn{
+    font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink-soft);
+    background:none;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;
+    transition:color .15s,background .15s;white-space:nowrap;
+  }
+  .nav-btn:hover{background:var(--accent-soft)}
+  .nav-btn.active{color:var(--accent);background:var(--accent-soft)}
+  .nav-btn:focus-visible,.icon-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .top-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
+  .icon-btn{
+    display:inline-flex;align-items:center;gap:8px;font-family:var(--disp);font-weight:600;font-size:13.5px;
+    border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;
+    padding:8px 14px;cursor:pointer;transition:border-color .15s,background .15s;white-space:nowrap;
+  }
+  .icon-btn:hover{border-color:var(--accent);background:var(--accent-soft)}
+  .icon-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .icon-btn.primary:hover{filter:brightness(1.08);background:var(--accent)}
+  .avatar{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;overflow:hidden;flex:none}
+  .avatar img{width:100%;height:100%;object-fit:cover}
+
+  main{max-width:1100px;margin:0 auto;padding:26px 24px 80px}
+  .view{display:none}
+  .view.active{display:block;animation:fadeIn .25s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .sec-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .sec-head h2{font-family:var(--disp);font-size:21px;font-weight:600}
+  .chip{font-family:var(--mono);font-size:11px;background:var(--accent-soft);color:var(--accent);padding:3px 9px;border-radius:99px;letter-spacing:.05em}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+  .card h3{font-family:var(--disp);font-size:13.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:14px}
+
+  .field{margin-bottom:12px}
+  .field:last-child{margin-bottom:0}
+  label{display:block;font-size:13px;font-weight:500;margin-bottom:4px}
+  .hint{font-size:11.5px;color:var(--ink-soft);margin-top:3px}
+  .in{position:relative;display:flex;align-items:center}
+  .in input{
+    width:100%;font-family:var(--mono);font-size:14px;padding:8px 10px;
+    border:1px solid var(--line);border-radius:7px;background:#FBFCFA;color:var(--ink);
+  }
+  .in input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .in .unit{position:absolute;right:10px;font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);pointer-events:none;background:linear-gradient(90deg,transparent,#FBFCFA 25%);padding-left:14px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+  .preview{
+    background:var(--ink);color:#EDF3F0;border-radius:var(--radius);
+    padding:18px 20px;margin-top:16px;display:flex;flex-wrap:wrap;gap:18px 34px;align-items:flex-end;
+  }
+  .big{font-family:var(--mono)}
+  .big .lbl{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#9DB4AC;display:block;margin-bottom:2px;font-family:var(--body);font-weight:500}
+  .big .val{font-size:22px;font-weight:700}
+  .big .val.green{color:#57D9A9}
+  .big .val.sm{font-size:17px}
+
+  .btn{
+    font-family:var(--disp);font-weight:600;font-size:14px;letter-spacing:.02em;
+    border:none;border-radius:8px;padding:10px 22px;cursor:pointer;transition:filter .15s;
+  }
+  .btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .btn:hover{filter:brightness(1.08)}
+  .btn-save{background:var(--accent);color:#fff}
+  .btn-cancel{background:transparent;color:var(--ink-soft);border:1px solid var(--line)}
+  .btn-sm{font-size:12px;padding:6px 12px;border-radius:6px}
+  .btn-edit{background:var(--accent-soft);color:var(--accent)}
+  .btn-del{background:#FBE7E2;color:var(--coral)}
+  .actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center}
+  #edit_flag{font-family:var(--mono);font-size:12px;color:var(--amber);display:none}
+
+  .table-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:760px}
+  th{
+    font-family:var(--disp);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink-soft);text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);
+    background:#FAFBF9;white-space:nowrap;
+  }
+  th.num,td.num{text-align:right}
+  td{padding:11px 14px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  td.num{font-family:var(--mono)}
+  td .pname{font-weight:600}
+  tr.inactive td{opacity:.45}
+  tr.inactive td:last-child,tr.inactive td.status-cell{opacity:1}
+  .empty{padding:26px;text-align:center;color:var(--ink-soft);font-size:13.5px}
+  select.status{
+    font-family:var(--mono);font-size:12px;font-weight:700;border-radius:99px;
+    padding:5px 8px;border:1px solid transparent;cursor:pointer;
+  }
+  select.status.on{background:#DCF5EA;color:#0B7A5B;border-color:#A8DEC7}
+  select.status.off{background:#E9ECEA;color:#6B7773;border-color:#D3D9D5}
+  select.status:focus-visible{outline:2px solid var(--accent)}
+  .row-actions{display:flex;gap:8px;justify-content:flex-end}
+
+  .note{background:var(--amber-soft);border:1px solid #EDD9B4;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#6E4E12;margin-top:16px}
+  .mk-badge{font-family:var(--mono);font-size:10.5px;padding:2px 8px;border-radius:99px}
+  .b-shopee{background:#FDEBE4;color:#C2452D}.b-ml{background:#FFF6D6;color:#8A6D00}.b-amz{background:#E4EEF7;color:#1F5C8B}
+
+  dialog{
+    border:none;border-radius:14px;padding:0;max-width:920px;width:calc(100vw - 32px);
+    box-shadow:0 24px 60px rgba(22,33,30,.25);
+  }
+  dialog::backdrop{background:rgba(22,33,30,.45);backdrop-filter:blur(2px)}
+  .modal-head{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:16px 22px;border-bottom:1px solid var(--line);
+    font-family:var(--disp);font-weight:600;font-size:17px;
+    position:sticky;top:0;background:var(--surface);z-index:2;border-radius:14px 14px 0 0;
+  }
+  .modal-body{padding:20px 22px;max-height:72vh;overflow-y:auto}
+  .x-btn{background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink-soft);padding:4px 8px;border-radius:6px}
+  .x-btn:hover{background:var(--bg)}
+  .modal-foot{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+  #dlg_login{max-width:400px}
+
+  .login-box{display:flex;flex-direction:column;gap:14px;align-items:stretch;text-align:center}
+  .login-box p{font-size:13.5px;color:var(--ink-soft)}
+  .gbtn{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    font-family:var(--body);font-weight:600;font-size:14.5px;
+    background:#fff;border:1px solid var(--line);border-radius:8px;
+    padding:11px 18px;cursor:pointer;transition:border-color .15s,box-shadow .15s;color:var(--ink);
+  }
+  .gbtn:hover{border-color:#B5C0BB;box-shadow:0 2px 8px rgba(22,33,30,.08)}
+  .divider{display:flex;align-items:center;gap:12px;color:var(--ink-soft);font-size:12px}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--line)}
+  .user-card{display:flex;align-items:center;gap:12px;text-align:left;background:var(--accent-soft);border-radius:10px;padding:12px 14px}
+  .user-card .avatar{width:38px;height:38px;font-size:15px}
+  .user-card .uname{font-weight:600;font-size:14px}
+  .user-card .uemail{font-size:12px;color:var(--ink-soft)}
+  .sync{font-family:var(--mono);font-size:10.5px;color:var(--ink-soft)}
+  .sync.ok{color:var(--accent)}
+
+  footer{border-top:1px solid var(--line);padding:20px 24px;text-align:center;font-size:12px;color:var(--ink-soft)}
+  @media(max-width:720px){
+    .topbar{padding:12px 16px;gap:10px}
+    nav{order:3;width:100%;justify-content:stretch}
+    .nav-btn{flex:1;text-align:center}
+    .icon-btn .lbl-txt{display:none}
+    main{padding:20px 16px 70px}
+    .row2{grid-template-columns:1fr}
+    .preview{gap:12px 22px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="topbar">
+    <h1>Fatia<span class="dot">.</span>3D</h1>
+    <nav aria-label="Menu principal">
+      <button class="nav-btn active" data-view="cadastro">Cadastro de produtos</button>
+      <button class="nav-btn" data-view="lista">Lista de produtos <span class="chip" id="count_chip" style="margin-left:4px">0</span></button>
+    </nav>
+    <div class="top-actions">
+      <span class="sync" id="sync_badge"></span>
+      <button class="icon-btn" id="btn_config" title="Configurações">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="lbl-txt">Configurações</span>
+      </button>
+      <button class="icon-btn primary" id="btn_login">
+        <span class="avatar" id="login_avatar" style="display:none"></span>
+        <span id="login_label">Entrar</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section class="view active" id="view-cadastro">
+    <div class="sec-head">
+      <h2>Cadastro de produtos</h2>
+      <span class="chip">custos e taxas ficam em ⚙ Configurações</span>
+    </div>
+
+    <div class="card">
+      <div class="grid" style="gap:12px">
+        <div class="field" style="margin:0">
+          <label for="p_nome">Nome do produto</label>
+          <div class="in"><input id="p_nome" type="text" placeholder="Ex.: Vaso hexagonal 15 cm" maxlength="80"></div>
+        </div>
+        <div class="field" style="margin:0">
+          <label for="p_peso">Peso da peça</label>
+          <div class="in"><input id="p_peso" type="number" value="50" min="0" step="1"><span class="unit">g</span></div>
+        </div>
+        <div class="field" style="margin:0">
+          <label>Tempo de impressão</label>
+          <div class="row2">
+            <div class="in"><input id="p_horas" type="number" value="5" min="0" step="1" aria-label="Horas de impressão"><span class="unit">h</span></div>
+            <div class="in"><input id="p_min" type="number" value="0" min="0" max="59" step="1" aria-label="Minutos de impressão"><span class="unit">min</span></div>
+          </div>
+        </div>
+        <div class="field" style="margin:0">
+          <label for="p_margem">Margem de lucro (sobre o custo)</label>
+          <div class="in"><input id="p_margem" type="number" value="100" min="0" step="5"><span class="unit">%</span></div>
+        </div>
+      </div>
+
+      <div class="preview" aria-live="polite">
+        <div class="big"><span class="lbl">Custo total</span><span class="val" id="pv_custo">R$ 0,00</span></div>
+        <div class="big"><span class="lbl">Venda direta</span><span class="val green" id="pv_direto">R$ 0,00</span></div>
+        <div class="big"><span class="lbl">Mercado Livre</span><span class="val sm" id="pv_ml">R$ 0,00</span></div>
+        <div class="big"><span class="lbl">Shopee</span><span class="val sm" id="pv_sh">R$ 0,00</span></div>
+        <div class="big"><span class="lbl">Amazon</span><span class="val sm" id="pv_az">R$ 0,00</span></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-save" id="btn_save">Salvar produto</button>
+        <button class="btn btn-cancel" id="btn_cancel" style="display:none">Cancelar edição</button>
+        <span id="edit_flag">✎ editando produto…</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-lista">
+    <div class="sec-head">
+      <h2>Lista de produtos</h2>
+      <span class="chip">preços recalculam com as configurações</span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th class="num">Custo total</th>
+            <th class="num">Mercado Livre</th>
+            <th class="num">Shopee</th>
+            <th class="num">Amazon</th>
+            <th style="text-align:center">Status</th>
+            <th style="text-align:right">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="empty_msg">Nenhum produto cadastrado ainda. Vá em “Cadastro de produtos” e salve o primeiro.</div>
+    </div>
+    <p class="hint" style="margin-top:8px">Os preços sugeridos preservam sua margem depois das taxas de cada plataforma. Editar um produto abre o cadastro preenchido.</p>
+  </section>
+
+</main>
+
+<dialog id="dlg_config">
+  <div class="modal-head">⚙ Configurações <button class="x-btn" data-close="dlg_config" aria-label="Fechar">✕</button></div>
+  <div class="modal-body">
+    <div class="grid">
+      <div class="card" style="border:none;padding:0">
+        <h3>Material e energia</h3>
+        <div class="field row2">
+          <div>
+            <label for="cfg_fil_preco">Preço do filamento</label>
+            <div class="in"><input id="cfg_fil_preco" type="number" value="120" min="0" step="1"><span class="unit">R$/kg</span></div>
+          </div>
+          <div>
+            <label for="cfg_desp">Desperdício</label>
+            <div class="in"><input id="cfg_desp" type="number" value="10" min="0" step="1"><span class="unit">%</span></div>
+          </div>
+        </div>
+        <div class="field row2">
+          <div>
+            <label for="cfg_pot">Potência da máquina</label>
+            <div class="in"><input id="cfg_pot" type="number" value="150" min="0" step="10"><span class="unit">W</span></div>
+          </div>
+          <div>
+            <label for="cfg_tarifa">Tarifa de energia</label>
+            <div class="in"><input id="cfg_tarifa" type="number" value="0.95" min="0" step="0.01"><span class="unit">R$/kWh</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="border:none;padding:0">
+        <h3>Máquina</h3>
+        <div class="field row2">
+          <div>
+            <label for="cfg_mq_valor">Valor da impressora</label>
+            <div class="in"><input id="cfg_mq_valor" type="number" value="2500" min="0" step="100"><span class="unit">R$</span></div>
+          </div>
+          <div>
+            <label for="cfg_mq_vida">Vida útil</label>
+            <div class="in"><input id="cfg_mq_vida" type="number" value="6000" min="1" step="100"><span class="unit">h</span></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="cfg_mq_manut">Manutenção (sobre a depreciação)</label>
+          <div class="in"><input id="cfg_mq_manut" type="number" value="25" min="0" step="5"><span class="unit">%</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="border:none;padding:0">
+        <h3>Trabalho, risco e extras</h3>
+        <div class="field row2">
+          <div>
+            <label for="cfg_mo_min">Mão de obra por peça</label>
+            <div class="in"><input id="cfg_mo_min" type="number" value="20" min="0" step="5"><span class="unit">min</span></div>
+          </div>
+          <div>
+            <label for="cfg_mo_hora">Valor da sua hora</label>
+            <div class="in"><input id="cfg_mo_hora" type="number" value="30" min="0" step="5"><span class="unit">R$/h</span></div>
+          </div>
+        </div>
+        <div class="field row2">
+          <div>
+            <label for="cfg_falha">Taxa de falha</label>
+            <div class="in"><input id="cfg_falha" type="number" value="5" min="0" max="90" step="1"><span class="unit">%</span></div>
+          </div>
+          <div>
+            <label for="cfg_extras">Custo extra por peça</label>
+            <div class="in"><input id="cfg_extras" type="number" value="3" min="0" step="0.5"><span class="unit">R$</span></div>
+          </div>
+        </div>
+        <div class="hint">Extras: embalagem, insumos, etiquetas etc.</div>
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--line);margin:20px 0">
+
+    <div class="grid">
+      <div class="card" style="border:none;padding:0">
+        <h3>Shopee <span class="mk-badge b-shopee">editável</span></h3>
+        <div class="field row2">
+          <div>
+            <label for="sh_com">Comissão</label>
+            <div class="in"><input id="sh_com" type="number" value="14" min="0" step="0.5"><span class="unit">%</span></div>
+          </div>
+          <div>
+            <label for="sh_extra">Frete grátis</label>
+            <div class="in"><input id="sh_extra" type="number" value="6" min="0" step="0.5"><span class="unit">%</span></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="sh_fixa">Taxa fixa por item</label>
+          <div class="in"><input id="sh_fixa" type="number" value="4" min="0" step="0.25"><span class="unit">R$</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="border:none;padding:0">
+        <h3>Mercado Livre <span class="mk-badge b-ml">editável</span></h3>
+        <div class="field row2">
+          <div>
+            <label for="ml_com">Comissão</label>
+            <div class="in"><input id="ml_com" type="number" value="12" min="0" step="0.5"><span class="unit">%</span></div>
+          </div>
+          <div>
+            <label for="ml_fixa">Custo fixo (&lt; R$ 79)</label>
+            <div class="in"><input id="ml_fixa" type="number" value="6.75" min="0" step="0.25"><span class="unit">R$</span></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="ml_frete">Frete subsidiado (≥ R$ 79)</label>
+          <div class="in"><input id="ml_frete" type="number" value="0" min="0" step="0.5"><span class="unit">R$</span></div>
+          <div class="hint">Acima de R$ 79 o custo fixo cai, mas parte do frete grátis sai do seu bolso.</div>
+        </div>
+      </div>
+
+      <div class="card" style="border:none;padding:0">
+        <h3>Amazon <span class="mk-badge b-amz">editável</span></h3>
+        <div class="field row2">
+          <div>
+            <label for="az_com">Comissão</label>
+            <div class="in"><input id="az_com" type="number" value="15" min="0" step="0.5"><span class="unit">%</span></div>
+          </div>
+          <div>
+            <label for="az_fixa">Taxa fixa por item</label>
+            <div class="in"><input id="az_fixa" type="number" value="2" min="0" step="0.25"><span class="unit">R$</span></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="cfg_imposto">Imposto sobre vendas (todas)</label>
+          <div class="in"><input id="cfg_imposto" type="number" value="0" min="0" max="40" step="0.5"><span class="unit">%</span></div>
+          <div class="hint">Ex.: Simples Nacional ≈ 4–6%. Deixe 0 se não emite nota.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">⚠ Taxas de referência editáveis — as plataformas mudam comissões e faixas com frequência. Confira os valores atuais no painel de vendedor antes de anunciar.</div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-save" data-close="dlg_config">Concluir</button>
+  </div>
+</dialog>
+
+<dialog id="dlg_login">
+  <div class="modal-head">Entrar / Cadastrar <button class="x-btn" data-close="dlg_login" aria-label="Fechar">✕</button></div>
+  <div class="modal-body">
+    <div class="login-box" id="login_out">
+      <p>Entre com sua conta Google para salvar seus produtos e configurações na nuvem e acessar de qualquer dispositivo.</p>
+      <button class="gbtn" id="btn_google">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.1 29.4 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.1 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.6 39.6 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.7l6.2 5.2C36.9 40.4 44 36 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+        Entrar com Google
+      </button>
+      <div class="divider">ou</div>
+      <button class="btn btn-cancel" data-close="dlg_login">Continuar sem conta</button>
+      <p class="hint">Sem conta, os dados ficam salvos apenas neste navegador. Ao entrar, o que você já criou aqui é enviado para a nuvem automaticamente.</p>
+    </div>
+    <div class="login-box" id="login_in" style="display:none">
+      <div class="user-card">
+        <span class="avatar" id="u_avatar"></span>
+        <div>
+          <div class="uname" id="u_nome"></div>
+          <div class="uemail" id="u_email"></div>
+        </div>
+      </div>
+      <button class="btn btn-cancel" id="btn_logout">Sair da conta</button>
+    </div>
+  </div>
+</dialog>
+
+<footer>Fatia.3D — os valores calculados são estimativas; confirme taxas e tarifas vigentes.</footer>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+/* ================= SUPABASE ================= */
+const SUPABASE_URL = 'https://vrgbvslfgvxpznynaarp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_QC0hu709T3KZL1zY6490ag_r_jjckYm'; // chave pública (ok expor)
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ================= helpers ================= */
+const $ = id => document.getElementById(id);
+const num = id => { const v = parseFloat($(id).value); return isNaN(v) ? 0 : v; };
+const brl = v => isFinite(v) ? v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '—';
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ================= estado ================= */
+let produtos = [];
+let editId = null;
+let user = null;
+let carregando = true;
+
+const CFG_IDS = ['cfg_fil_preco','cfg_desp','cfg_pot','cfg_tarifa','cfg_mq_valor','cfg_mq_vida','cfg_mq_manut',
+                 'cfg_mo_min','cfg_mo_hora','cfg_falha','cfg_extras',
+                 'sh_com','sh_extra','sh_fixa','ml_com','ml_fixa','ml_frete','az_com','az_fixa','cfg_imposto'];
+const LOCAL_KEY = 'fatia3d-local';
+
+function snapshot(){
+  const cfg = {}; CFG_IDS.forEach(id => cfg[id] = $(id).value);
+  return { cfg, produtos };
+}
+function aplicar(data){
+  if (!data) return;
+  if (data.cfg) CFG_IDS.forEach(id => { if (data.cfg[id] !== undefined) $(id).value = data.cfg[id]; });
+  produtos = Array.isArray(data.produtos) ? data.produtos : [];
+}
+
+/* ================= persistência (nuvem + local) ================= */
+let saveTimer = null;
+function persist(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    const data = snapshot();
+    try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(data)); }catch(e){}
+    if (user){
+      setSync('salvando…', false);
+      const { error } = await sb.from('user_data').upsert({ user_id: user.id, data, updated_at: new Date().toISOString() });
+      setSync(error ? 'erro ao salvar ✕' : 'salvo na nuvem ✓', !error);
+      if (error) console.error(error);
+    }
+  }, 600);
+}
+function setSync(txt, ok){
+  const el = $('sync_badge');
+  el.textContent = txt || '';
+  el.className = 'sync' + (ok ? ' ok' : '');
+}
+
+async function carregarDados(){
+  carregando = true;
+  let local = null;
+  try{ local = JSON.parse(localStorage.getItem(LOCAL_KEY)); }catch(e){}
+
+  if (user){
+    const { data, error } = await sb.from('user_data').select('data').eq('user_id', user.id).maybeSingle();
+    if (!error && data && data.data){
+      aplicar(data.data);
+      setSync('salvo na nuvem ✓', true);
+    } else if (!error && !data && local){
+      // primeira vez logando: migra o que existia neste navegador para a nuvem
+      aplicar(local);
+      await sb.from('user_data').upsert({ user_id: user.id, data: snapshot(), updated_at: new Date().toISOString() });
+      setSync('dados migrados para a nuvem ✓', true);
+    } else {
+      aplicar(local);
+      if (error){ console.error(error); setSync('offline (dados locais)', false); }
+    }
+  } else {
+    aplicar(local);
+    setSync('');
+  }
+  carregando = false;
+}
+
+/* ================= navegação ================= */
+document.querySelectorAll('.nav-btn').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    $('view-' + b.dataset.view).classList.add('active');
+  });
+});
+const irPara = v => document.querySelector(`.nav-btn[data-view="${v}"]`).click();
+
+/* ================= modais ================= */
+$('btn_config').addEventListener('click', ()=> $('dlg_config').showModal());
+$('btn_login').addEventListener('click', ()=> $('dlg_login').showModal());
+document.querySelectorAll('[data-close]').forEach(b=>
+  b.addEventListener('click', ()=> $(b.dataset.close).close()));
+document.querySelectorAll('dialog').forEach(d=>
+  d.addEventListener('click', e=>{ if (e.target === d) d.close(); }));
+
+/* ================= cálculos ================= */
+const tempoHoras = () => num('p_horas') + num('p_min')/60;
+function custoProduto(peso, tempo){
+  const mat = (peso * (1 + num('cfg_desp')/100) / 1000) * num('cfg_fil_preco');
+  const eng = (num('cfg_pot')/1000) * tempo * num('cfg_tarifa');
+  const maq = (num('cfg_mq_valor') / Math.max(num('cfg_mq_vida'),1)) * (1 + num('cfg_mq_manut')/100) * tempo;
+  const f = Math.min(num('cfg_falha'),90)/100;
+  return (mat + eng + maq) / (1 - f) + (num('cfg_mo_min')/60) * num('cfg_mo_hora') + num('cfg_extras');
+}
+function precoAnuncio(liquido, pct, fixa){
+  if (pct >= 0.95) return NaN;
+  return (liquido + fixa) / (1 - pct);
+}
+function precosProduto(p){
+  const custo = custoProduto(p.peso, p.tempo);
+  const direto = custo * (1 + p.margem/100);
+  const imposto = num('cfg_imposto')/100;
+  const sh = precoAnuncio(direto, num('sh_com')/100 + num('sh_extra')/100 + imposto, num('sh_fixa'));
+  const az = precoAnuncio(direto, num('az_com')/100 + imposto, num('az_fixa'));
+  const mlPct = num('ml_com')/100 + imposto;
+  let ml = precoAnuncio(direto, mlPct, num('ml_fixa'));
+  if (isFinite(ml) && ml >= 79){
+    const alt = precoAnuncio(direto, mlPct, num('ml_frete'));
+    ml = (isFinite(alt) && alt >= 79) ? alt : ml;
+  }
+  return { custo, direto, ml, sh, az };
+}
+const fmtTempo = t => { const h = Math.floor(t), m = Math.round((t-h)*60); return h + 'h' + (m ? String(m).padStart(2,'0') : ''); };
+
+/* ================= render ================= */
+function renderPreview(){
+  const r = precosProduto({ peso:num('p_peso'), tempo:tempoHoras(), margem:num('p_margem') });
+  $('pv_custo').textContent = brl(r.custo);
+  $('pv_direto').textContent = brl(r.direto);
+  $('pv_ml').textContent = brl(r.ml);
+  $('pv_sh').textContent = brl(r.sh);
+  $('pv_az').textContent = brl(r.az);
+}
+function renderTable(){
+  $('tbody').innerHTML = produtos.map(p=>{
+    const r = precosProduto(p);
+    return `<tr class="${p.ativo ? '' : 'inactive'}" data-id="${p.id}">
+      <td><span class="pname">${esc(p.nome)}</span><div class="hint">${p.peso} g · ${fmtTempo(p.tempo)} · margem ${p.margem}%</div></td>
+      <td class="num">${brl(r.custo)}</td>
+      <td class="num">${brl(r.ml)}</td>
+      <td class="num">${brl(r.sh)}</td>
+      <td class="num">${brl(r.az)}</td>
+      <td class="status-cell" style="text-align:center">
+        <select class="status ${p.ativo?'on':'off'}" aria-label="Status de ${esc(p.nome)}">
+          <option value="1" ${p.ativo?'selected':''}>● Ativo</option>
+          <option value="0" ${!p.ativo?'selected':''}>○ Inativo</option>
+        </select>
+      </td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-sm btn-edit" data-act="edit">Editar</button>
+          <button class="btn btn-sm btn-del" data-act="del">Excluir</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+  $('empty_msg').style.display = produtos.length ? 'none' : 'block';
+  $('count_chip').textContent = produtos.length;
+}
+
+/* ================= CRUD ================= */
+function salvarProduto(){
+  const nome = $('p_nome').value.trim();
+  if (!nome){ $('p_nome').focus(); $('p_nome').style.borderColor = 'var(--coral)'; return; }
+  $('p_nome').style.borderColor = '';
+  const dados = { nome, peso:num('p_peso'), tempo:tempoHoras(), margem:num('p_margem') };
+  if (editId !== null){
+    const p = produtos.find(x => x.id === editId);
+    if (p) Object.assign(p, dados);
+    sairEdicao();
+  } else {
+    produtos.push({ id: Date.now(), ativo:true, ...dados });
+  }
+  $('p_nome').value = '';
+  renderTable(); persist(); irPara('lista');
+}
+function entrarEdicao(p){
+  editId = p.id;
+  $('p_nome').value = p.nome; $('p_peso').value = p.peso;
+  $('p_horas').value = Math.floor(p.tempo);
+  $('p_min').value = Math.round((p.tempo - Math.floor(p.tempo)) * 60);
+  $('p_margem').value = p.margem;
+  $('btn_save').textContent = 'Atualizar produto';
+  $('btn_cancel').style.display = 'inline-block';
+  $('edit_flag').style.display = 'inline';
+  renderPreview(); irPara('cadastro');
+}
+function sairEdicao(){
+  editId = null;
+  $('btn_save').textContent = 'Salvar produto';
+  $('btn_cancel').style.display = 'none';
+  $('edit_flag').style.display = 'none';
+}
+
+$('tbody').addEventListener('click', e=>{
+  const btn = e.target.closest('button'); if (!btn) return;
+  const id = +btn.closest('tr').dataset.id;
+  const p = produtos.find(x => x.id === id); if (!p) return;
+  if (btn.dataset.act === 'edit') entrarEdicao(p);
+  if (btn.dataset.act === 'del' && confirm(`Excluir "${p.nome}"?`)){
+    produtos = produtos.filter(x => x.id !== id);
+    if (editId === id){ sairEdicao(); $('p_nome').value=''; }
+    renderTable(); persist();
+  }
+});
+$('tbody').addEventListener('change', e=>{
+  const sel = e.target.closest('select.status'); if (!sel) return;
+  const p = produtos.find(x => x.id === +sel.closest('tr').dataset.id); if (!p) return;
+  p.ativo = sel.value === '1';
+  renderTable(); persist();
+});
+
+$('btn_save').addEventListener('click', salvarProduto);
+$('btn_cancel').addEventListener('click', ()=>{ sairEdicao(); $('p_nome').value=''; });
+$('p_nome').addEventListener('keydown', e=>{ if (e.key === 'Enter') salvarProduto(); });
+
+CFG_IDS.forEach(id => $(id).addEventListener('input', ()=>{ if (carregando) return; renderPreview(); renderTable(); persist(); }));
+['p_peso','p_horas','p_min','p_margem'].forEach(id => $(id).addEventListener('input', renderPreview));
+
+/* ================= login (Supabase Auth) ================= */
+function renderUser(){
+  const logado = !!user;
+  $('login_out').style.display = logado ? 'none' : 'flex';
+  $('login_in').style.display  = logado ? 'flex' : 'none';
+  const nome = logado ? (user.user_metadata?.full_name || user.email || 'Conta') : '';
+  const foto = logado ? (user.user_metadata?.avatar_url || '') : '';
+  $('login_label').textContent = logado ? nome.split(' ')[0] : 'Entrar';
+  const av = $('login_avatar');
+  if (logado){
+    av.style.display = 'inline-flex';
+    av.innerHTML = foto ? `<img src="${esc(foto)}" alt="" referrerpolicy="no-referrer">` : esc(nome[0].toUpperCase());
+    $('u_avatar').innerHTML = av.innerHTML;
+    $('u_nome').textContent = nome;
+    $('u_email').textContent = user.email || '';
+  } else {
+    av.style.display = 'none'; av.innerHTML = '';
+  }
+}
+
+$('btn_google').addEventListener('click', async ()=>{
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + window.location.pathname }
+  });
+  if (error){ alert('Não foi possível iniciar o login: ' + error.message); }
+});
+$('btn_logout').addEventListener('click', async ()=>{
+  await sb.auth.signOut();
+  $('dlg_login').close();
+});
+
+sb.auth.onAuthStateChange(async (_event, session)=>{
+  const novo = session?.user || null;
+  if ((novo && !user) || (!novo && user) || (novo && user && novo.id !== user.id)){
+    user = novo;
+    await carregarDados();
+    renderUser(); renderPreview(); renderTable();
+  }
+});
+
+/* ================= inicialização ================= */
+(async ()=>{
+  const { data:{ session } } = await sb.auth.getSession();
+  user = session?.user || null;
+  await carregarDados();
+  renderUser(); renderPreview(); renderTable();
+})();
+</script>
+</body>
+</html>
