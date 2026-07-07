@@ -98,7 +98,7 @@
   #edit_flag{font-family:var(--mono);font-size:12px;color:var(--amber);display:none}
 
   .table-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow-x:auto}
-  table{width:100%;border-collapse:collapse;min-width:760px}
+  table{width:100%;border-collapse:collapse;min-width:840px}
   th{
     font-family:var(--disp);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
     color:var(--ink-soft);text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);
@@ -108,6 +108,14 @@
   td{padding:11px 14px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:middle}
   tr:last-child td{border-bottom:none}
   td.num{font-family:var(--mono)}
+  th.col-ml,td.col-ml{color:#8A6D00;background:#FFFBEB}
+  th.col-sh,td.col-sh{color:#C2481A;background:#FFF3EC}
+  th.col-az,td.col-az{color:#1F5C8B;background:#EFF6FC}
+  th.col-lu,td.col-lu{color:#0B7A5B;background:#EDF7F1}
+  td.col-ml,td.col-sh,td.col-az,td.col-lu{font-weight:700}
+  .val.c-ml{color:#F2C94C}
+  .val.c-sh{color:#FF9A6B}
+  .val.c-az{color:#7CC0F0}
   td .pname{font-weight:600}
   tr.inactive td{opacity:.45}
   tr.inactive td:last-child,tr.inactive td.status-cell{opacity:1}
@@ -228,10 +236,11 @@
 
       <div class="preview" aria-live="polite">
         <div class="big"><span class="lbl">Custo total</span><span class="val" id="pv_custo">R$ 0,00</span></div>
+        <div class="big"><span class="lbl">Lucro líquido</span><span class="val green" id="pv_lucro">R$ 0,00</span></div>
         <div class="big"><span class="lbl">Venda direta</span><span class="val green" id="pv_direto">R$ 0,00</span></div>
-        <div class="big"><span class="lbl">Mercado Livre</span><span class="val sm" id="pv_ml">R$ 0,00</span></div>
-        <div class="big"><span class="lbl">Shopee</span><span class="val sm" id="pv_sh">R$ 0,00</span></div>
-        <div class="big"><span class="lbl">Amazon</span><span class="val sm" id="pv_az">R$ 0,00</span></div>
+        <div class="big"><span class="lbl">Mercado Livre</span><span class="val sm c-ml" id="pv_ml">R$ 0,00</span></div>
+        <div class="big"><span class="lbl">Shopee</span><span class="val sm c-sh" id="pv_sh">R$ 0,00</span></div>
+        <div class="big"><span class="lbl">Amazon</span><span class="val sm c-az" id="pv_az">R$ 0,00</span></div>
       </div>
 
       <div class="actions">
@@ -254,9 +263,10 @@
           <tr>
             <th>Produto</th>
             <th class="num">Custo total</th>
-            <th class="num">Mercado Livre</th>
-            <th class="num">Shopee</th>
-            <th class="num">Amazon</th>
+            <th class="num col-lu">Lucro líquido</th>
+            <th class="num col-ml">Mercado Livre</th>
+            <th class="num col-sh">Shopee</th>
+            <th class="num col-az">Amazon</th>
             <th style="text-align:center">Status</th>
             <th style="text-align:right">Ações</th>
           </tr>
@@ -563,7 +573,7 @@ function precosProduto(p){
     const alt = precoAnuncio(direto, mlPct, num('ml_frete'));
     ml = (isFinite(alt) && alt >= 79) ? alt : ml;
   }
-  return { custo, direto, ml, sh, az };
+  return { custo, direto, ml, sh, az, lucro: direto - custo };
 }
 const fmtTempo = t => { const h = Math.floor(t), m = Math.round((t-h)*60); return h + 'h' + (m ? String(m).padStart(2,'0') : ''); };
 
@@ -571,6 +581,7 @@ const fmtTempo = t => { const h = Math.floor(t), m = Math.round((t-h)*60); retur
 function renderPreview(){
   const r = precosProduto({ peso:num('p_peso'), tempo:tempoHoras(), margem:num('p_margem') });
   $('pv_custo').textContent = brl(r.custo);
+  $('pv_lucro').textContent = brl(r.lucro);
   $('pv_direto').textContent = brl(r.direto);
   $('pv_ml').textContent = brl(r.ml);
   $('pv_sh').textContent = brl(r.sh);
@@ -582,9 +593,10 @@ function renderTable(){
     return `<tr class="${p.ativo ? '' : 'inactive'}" data-id="${p.id}">
       <td><span class="pname">${esc(p.nome)}</span><div class="hint">${p.peso} g · ${fmtTempo(p.tempo)} · margem ${p.margem}%</div></td>
       <td class="num">${brl(r.custo)}</td>
-      <td class="num">${brl(r.ml)}</td>
-      <td class="num">${brl(r.sh)}</td>
-      <td class="num">${brl(r.az)}</td>
+      <td class="num col-lu">${brl(r.lucro)}</td>
+      <td class="num col-ml">${brl(r.ml)}</td>
+      <td class="num col-sh">${brl(r.sh)}</td>
+      <td class="num col-az">${brl(r.az)}</td>
       <td class="status-cell" style="text-align:center">
         <select class="status ${p.ativo?'on':'off'}" aria-label="Status de ${esc(p.nome)}">
           <option value="1" ${p.ativo?'selected':''}>● Ativo</option>
