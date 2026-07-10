@@ -149,6 +149,21 @@
   .x-btn:hover{background:var(--bg)}
   .modal-foot{padding:14px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
   #dlg_login{max-width:400px}
+  #dlg_pro{max-width:480px}
+
+  .pro-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pro-card{border:1px solid var(--line);border-radius:12px;padding:20px 16px 16px;text-align:center;position:relative}
+  .pro-card.destaque{border-color:var(--accent);background:var(--accent-soft)}
+  .pro-tag{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-family:var(--mono);font-size:10.5px;padding:3px 10px;border-radius:99px;white-space:nowrap}
+  .pro-name{font-family:var(--disp);font-weight:600;margin-bottom:6px}
+  .pro-price{font-family:var(--mono);font-size:26px;font-weight:700;margin-bottom:14px}
+  .pro-price span{font-size:12px;color:var(--ink-soft);font-weight:400}
+  .pro-list{list-style:none;margin-top:16px;font-size:13.5px;display:flex;flex-direction:column;gap:6px;align-items:center}
+  .uplan{font-family:var(--mono);font-size:11px;margin-top:2px;color:var(--accent);font-weight:700}
+  .af-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+  .af-list a{display:inline-block;background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;text-decoration:none;border:1px solid #CBE6DB}
+  .af-list a:hover{filter:brightness(.96)}
+  @media(max-width:520px){.pro-grid{grid-template-columns:1fr}}
 
   .login-box{display:flex;flex-direction:column;gap:14px;align-items:stretch;text-align:center}
   .login-box p{font-size:13.5px;color:var(--ink-soft)}
@@ -168,7 +183,16 @@
   .sync{font-family:var(--mono);font-size:10.5px;color:var(--ink-soft)}
   .sync.ok{color:var(--accent)}
 
-  footer{border-top:1px solid var(--line);padding:20px 24px;text-align:center;font-size:12px;color:var(--ink-soft)}
+  footer{border-top:1px solid var(--line);padding:24px;text-align:center;font-size:12px;color:var(--ink-soft)}
+  .doar{font-size:13.5px;color:var(--ink);display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center}
+  .pix-btn{
+    font-family:var(--mono);font-size:12.5px;font-weight:700;color:var(--accent);
+    background:var(--accent-soft);border:1px dashed var(--accent);border-radius:8px;
+    padding:7px 12px;cursor:pointer;transition:filter .15s;
+  }
+  .pix-btn:hover{filter:brightness(.96)}
+  .pix-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .pix-ok{font-family:var(--mono);font-size:11.5px;color:var(--accent);font-weight:700}
   @media(max-width:720px){
     .topbar{padding:12px 16px;gap:10px}
     nav{order:3;width:100%;justify-content:stretch}
@@ -248,6 +272,12 @@
         <button class="btn btn-cancel" id="btn_cancel" style="display:none">Cancelar edição</button>
         <span id="edit_flag">✎ editando produto…</span>
       </div>
+    </div>
+
+    <div class="card" id="afiliados_card" style="margin-top:16px;display:none">
+      <h3>🧵 Filamentos recomendados</h3>
+      <div class="af-list" id="afiliados_list"></div>
+      <div class="hint">Links de parceiros: comprando por eles você apoia o Fatia.3D sem pagar nada a mais por isso.</div>
     </div>
   </section>
 
@@ -438,14 +468,53 @@
         <div>
           <div class="uname" id="u_nome"></div>
           <div class="uemail" id="u_email"></div>
+          <div class="uplan" id="u_plan"></div>
         </div>
       </div>
+      <button class="btn btn-save" id="btn_ver_pro">⭐ Conhecer o Fatia.3D Pro</button>
       <button class="btn btn-cancel" id="btn_logout">Sair da conta</button>
     </div>
   </div>
 </dialog>
 
-<footer>Fatia.3D — os valores calculados são estimativas; confirme taxas e tarifas vigentes.</footer>
+<dialog id="dlg_pro">
+  <div class="modal-head">⭐ Fatia.3D Pro <button class="x-btn" data-close="dlg_pro" aria-label="Fechar">✕</button></div>
+  <div class="modal-body">
+    <p style="text-align:center;color:var(--ink-soft);font-size:14px;margin-bottom:20px">
+      O plano grátis permite até <b>3 produtos</b> cadastrados.<br>Com o Pro, seus produtos são ilimitados e você apoia a plataforma.
+    </p>
+    <div class="pro-grid">
+      <div class="pro-card">
+        <div class="pro-name">Mensal</div>
+        <div class="pro-price">R$ 2,99<span>/mês</span></div>
+        <button class="btn btn-cancel" id="btn_mp_mensal" style="width:100%">Assinar mensal</button>
+      </div>
+      <div class="pro-card destaque">
+        <div class="pro-tag">2 meses grátis</div>
+        <div class="pro-name">Anual</div>
+        <div class="pro-price">R$ 30<span>/ano</span></div>
+        <button class="btn btn-save" id="btn_mp_anual" style="width:100%">Assinar anual</button>
+      </div>
+    </div>
+    <ul class="pro-list">
+      <li>✔ Produtos ilimitados</li>
+      <li>✔ Dados salvos na nuvem, em qualquer dispositivo</li>
+      <li>✔ Acesso antecipado às novidades</li>
+    </ul>
+    <p class="hint" style="text-align:center;margin-top:14px">
+      Pagamento por Pix ou cartão via Mercado Pago. O plano é ativado na conta Google usada no login em até 24h após a confirmação do pagamento.
+    </p>
+  </div>
+</dialog>
+
+<footer>
+  <div class="doar">
+    💚 O Fatia.3D é gratuito. Se ele te ajuda a vender melhor, ajude o desenvolvedor com qualquer valor:
+    <button class="pix-btn" id="btn_pix" title="Clique para copiar a chave Pix">Pix: fernando_sirbone@yahoo.com.br 📋</button>
+    <span class="pix-ok" id="pix_ok" aria-live="polite"></span>
+  </div>
+  <div style="margin-top:10px">Fatia.3D — os valores calculados são estimativas; confirme taxas e tarifas vigentes.</div>
+</footer>
 
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -454,6 +523,23 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const SUPABASE_URL = 'https://vrgbvslfgvxpznynaarp.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_QC0hu709T3KZL1zY6490ag_r_jjckYm'; // chave pública (ok expor)
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ================= MONETIZAÇÃO (edite aqui) ================= */
+// Site 100% gratuito. Se um dia quiser reativar o plano Pro com limite
+// de produtos, basta mudar a linha abaixo para true.
+const PLANO_PRO_ATIVO = false;
+// Chave Pix exibida no rodapé para doações:
+const PIX_DOACAO = 'fernando_sirbone@yahoo.com.br';
+// Cole os links de assinatura do Mercado Pago quando criar (veja ATUALIZACAO-PRO.txt).
+// Enquanto estiverem vazios, o botão mostra "em breve".
+const MP_LINK_MENSAL = '';
+const MP_LINK_ANUAL  = '';
+const LIMITE_FREE = 3; // produtos no plano grátis
+
+// Links de afiliado de filamentos. Adicione quantos quiser no formato abaixo.
+// Exemplo: { nome: 'PLA Voolt 1kg', url: 'https://s.shopee.com.br/SEU-LINK' },
+const AFILIADOS = [
+];
 
 /* ================= helpers ================= */
 const $ = id => document.getElementById(id);
@@ -466,6 +552,8 @@ let produtos = [];
 let editId = null;
 let user = null;
 let carregando = true;
+let plano = 'free';
+const isPro = () => plano === 'pro' || plano === 'admin';
 
 const CFG_IDS = ['cfg_fil_preco','cfg_desp','cfg_pot','cfg_tarifa','cfg_mq_valor','cfg_mq_vida','cfg_mq_manut',
                  'cfg_mo_min','cfg_mo_hora','cfg_falha','cfg_extras',
@@ -612,11 +700,12 @@ function renderTable(){
     </tr>`;
   }).join('');
   $('empty_msg').style.display = produtos.length ? 'none' : 'block';
-  $('count_chip').textContent = produtos.length;
+  $('count_chip').textContent = (PLANO_PRO_ATIVO && !isPro()) ? produtos.length + '/' + LIMITE_FREE : produtos.length;
 }
 
 /* ================= CRUD ================= */
 function salvarProduto(){
+  if (PLANO_PRO_ATIVO && editId === null && !isPro() && produtos.length >= LIMITE_FREE){ $('dlg_pro').showModal(); return; }
   const nome = $('p_nome').value.trim();
   if (!nome){ $('p_nome').focus(); $('p_nome').style.borderColor = 'var(--coral)'; return; }
   $('p_nome').style.borderColor = '';
@@ -711,8 +800,53 @@ sb.auth.onAuthStateChange(async (_event, session)=>{
   if ((novo && !user) || (!novo && user) || (novo && user && novo.id !== user.id)){
     user = novo;
     await carregarDados();
+    await carregarPlano();
     renderUser(); renderPreview(); renderTable();
   }
+});
+
+/* ================= plano / Pro ================= */
+const NOMES_PLANO = { free:'Plano Grátis', pro:'Plano Pro ⭐', admin:'Admin 🔧' };
+function renderPlano(){
+  $('u_plan').textContent = NOMES_PLANO[plano] || NOMES_PLANO.free;
+  $('count_chip').textContent = (PLANO_PRO_ATIVO && !isPro()) ? produtos.length + '/' + LIMITE_FREE : produtos.length;
+  $('btn_ver_pro').style.display = PLANO_PRO_ATIVO ? '' : 'none';
+}
+async function carregarPlano(){
+  plano = 'free';
+  if (user){
+    try{
+      const { data } = await sb.from('profiles').select('plan').eq('user_id', user.id).maybeSingle();
+      if (data && data.plan) plano = data.plan;
+    }catch(e){ console.error(e); }
+  }
+  renderPlano();
+}
+function irAssinar(url){
+  if (!user){ alert('Entre com sua conta Google primeiro — o plano Pro é ativado no e-mail do seu login.'); $('dlg_pro').close(); $('dlg_login').showModal(); return; }
+  if (!url){ alert('As assinaturas abrem em breve! Estamos finalizando o meio de pagamento.'); return; }
+  window.open(url, '_blank', 'noopener');
+}
+$('btn_ver_pro').addEventListener('click', ()=>{ $('dlg_login').close(); $('dlg_pro').showModal(); });
+$('btn_mp_mensal').addEventListener('click', ()=> irAssinar(MP_LINK_MENSAL));
+$('btn_mp_anual').addEventListener('click', ()=> irAssinar(MP_LINK_ANUAL));
+
+/* ================= afiliados ================= */
+if (AFILIADOS.length){
+  $('afiliados_card').style.display = 'block';
+  $('afiliados_list').innerHTML = AFILIADOS.map(a =>
+    `<a href="${esc(a.url)}" target="_blank" rel="noopener sponsored">${esc(a.nome)} ↗</a>`).join('');
+}
+
+/* ================= doação (Pix) ================= */
+$('btn_pix').addEventListener('click', async ()=>{
+  try{
+    await navigator.clipboard.writeText(PIX_DOACAO);
+    $('pix_ok').textContent = 'chave copiada ✓';
+  }catch(e){
+    $('pix_ok').textContent = PIX_DOACAO; // fallback: mostra para copiar manualmente
+  }
+  setTimeout(()=>{ $('pix_ok').textContent = ''; }, 2500);
 });
 
 /* ================= inicialização ================= */
@@ -720,6 +854,7 @@ sb.auth.onAuthStateChange(async (_event, session)=>{
   const { data:{ session } } = await sb.auth.getSession();
   user = session?.user || null;
   await carregarDados();
+  await carregarPlano();
   renderUser(); renderPreview(); renderTable();
 })();
 </script>
