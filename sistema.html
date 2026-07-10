@@ -162,6 +162,23 @@
   </div>
 </div>
 
+<!-- ============ ACESSO RESTRITO ============ -->
+<div class="auth-wrap" id="restrito" style="display:none">
+  <div class="auth-card" style="text-align:center">
+    <h1>Fatia<span class="dot">.</span>3D</h1>
+    <div class="auth-sub">sistema · em construção</div>
+    <div style="font-size:40px;margin:6px 0 10px">🚧</div>
+    <p style="font-size:14px;color:var(--ink-soft);margin-bottom:6px">
+      O sistema de gestão está em fase de testes e ainda não foi liberado ao público.
+    </p>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:18px">
+      Você está logado como <b id="r_email" style="font-family:var(--mono)"></b>
+    </p>
+    <button class="btn btn-ghost" id="btn_sair_restrito">Sair</button>
+    <a class="voltar" href="index.html">← Voltar para a calculadora</a>
+  </div>
+</div>
+
 <!-- ============ SISTEMA ============ -->
 <div class="app" id="app">
   <aside>
@@ -337,13 +354,28 @@ $('btn_google').addEventListener('click', async ()=>{
 
 $('btn_sair').addEventListener('click', ()=> sb.auth.signOut());
 
-/* ---------- estado do app ---------- */
-function render(){
-  const logado = !!user;
-  $('auth').style.display = logado ? 'none' : 'flex';
-  $('app').classList.toggle('on', logado);
-  if (logado) $('side_email').textContent = user.email || user.user_metadata?.full_name || '';
+/* ---------- estado do app (somente admin acessa) ---------- */
+async function render(){
+  if (!user){
+    $('auth').style.display = 'flex';
+    $('restrito').style.display = 'none';
+    $('app').classList.remove('on');
+    return;
+  }
+  // logado: verifica se é admin na tabela profiles
+  let plan = 'free';
+  try{
+    const { data } = await sb.from('profiles').select('plan').eq('user_id', user.id).maybeSingle();
+    if (data && data.plan) plan = data.plan;
+  }catch(e){ console.error(e); }
+  const admin = plan === 'admin';
+  $('auth').style.display = 'none';
+  $('app').classList.toggle('on', admin);
+  $('restrito').style.display = admin ? 'none' : 'flex';
+  if (admin) $('side_email').textContent = user.email || user.user_metadata?.full_name || '';
+  else $('r_email').textContent = user.email || '';
 }
+$('btn_sair_restrito').addEventListener('click', ()=> sb.auth.signOut());
 
 sb.auth.onAuthStateChange((_e, session)=>{
   user = session?.user || null;

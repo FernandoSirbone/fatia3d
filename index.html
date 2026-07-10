@@ -215,7 +215,7 @@
     </nav>
     <div class="top-actions">
       <span class="sync" id="sync_badge"></span>
-      <a class="icon-btn" href="sistema.html" id="btn_sistema" title="Acesso ao sistema completo" style="text-decoration:none">
+      <a class="icon-btn" href="sistema.html" id="btn_sistema" title="Acesso ao sistema completo" style="text-decoration:none;display:none">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         <span class="lbl-txt">Sistema</span>
       </a>
@@ -815,6 +815,7 @@ function renderPlano(){
   $('u_plan').textContent = NOMES_PLANO[plano] || NOMES_PLANO.free;
   $('count_chip').textContent = (PLANO_PRO_ATIVO && !isPro()) ? produtos.length + '/' + LIMITE_FREE : produtos.length;
   $('btn_ver_pro').style.display = PLANO_PRO_ATIVO ? '' : 'none';
+  $('btn_sistema').style.display = plano === 'admin' ? '' : 'none';
 }
 async function carregarPlano(){
   plano = 'free';
