@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fatia.3D Sistema — Gestão de Marketplaces</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F2F4F1; --surface:#FFFFFF; --ink:#16211E; --ink-soft:#5A6B66;
+    --line:#DCE2DD; --accent:#0B7A5B; --accent-soft:#E2F1EB;
+    --amber:#B97516; --amber-soft:#FBEFDB; --coral:#C2452D;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --disp:'Chakra Petch',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+  a{color:var(--accent)}
+
+  /* ============ tela de login ============ */
+  .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+    background:repeating-linear-gradient(0deg,transparent 0 7px,rgba(11,122,91,.04) 7px 8px),var(--bg)}
+  .auth-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:32px 28px;max-width:400px;width:100%;box-shadow:0 20px 50px rgba(22,33,30,.10)}
+  .auth-card h1{font-family:var(--disp);font-size:26px;font-weight:700;text-align:center}
+  .auth-card h1 .dot{color:var(--accent)}
+  .auth-sub{text-align:center;font-size:13px;color:var(--ink-soft);margin:4px 0 22px;font-family:var(--mono);letter-spacing:.05em;text-transform:uppercase}
+  .field{margin-bottom:14px}
+  label{display:block;font-size:13px;font-weight:500;margin-bottom:4px}
+  input[type=email],input[type=password],input[type=text]{
+    width:100%;font-family:var(--mono);font-size:14px;padding:10px 12px;
+    border:1px solid var(--line);border-radius:8px;background:#FBFCFA;color:var(--ink);
+  }
+  input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .btn{
+    font-family:var(--disp);font-weight:600;font-size:14.5px;border:none;border-radius:8px;
+    padding:11px 22px;cursor:pointer;transition:filter .15s;width:100%;
+  }
+  .btn:hover{filter:brightness(1.07)}
+  .btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .btn-main{background:var(--accent);color:#fff}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line)}
+  .gbtn{
+    display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+    font-family:var(--body);font-weight:600;font-size:14px;background:#fff;
+    border:1px solid var(--line);border-radius:8px;padding:11px;cursor:pointer;color:var(--ink);
+  }
+  .gbtn:hover{border-color:#B5C0BB}
+  .divider{display:flex;align-items:center;gap:12px;color:var(--ink-soft);font-size:12px;margin:16px 0}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--line)}
+  .auth-msg{font-size:12.5px;margin-top:12px;text-align:center;min-height:18px}
+  .auth-msg.err{color:var(--coral)}
+  .auth-msg.ok{color:var(--accent)}
+  .auth-toggle{text-align:center;font-size:13px;margin-top:16px;color:var(--ink-soft)}
+  .auth-toggle button{background:none;border:none;color:var(--accent);font-weight:600;cursor:pointer;font-size:13px}
+  .voltar{display:block;text-align:center;font-size:12.5px;margin-top:18px;color:var(--ink-soft)}
+
+  /* ============ app (pós-login) ============ */
+  .app{display:none;min-height:100vh}
+  .app.on{display:grid;grid-template-columns:230px 1fr}
+  aside{
+    background:var(--ink);color:#C7D4CF;padding:22px 14px;display:flex;flex-direction:column;gap:4px;
+    position:sticky;top:0;height:100vh;
+  }
+  .side-brand{font-family:var(--disp);font-size:20px;font-weight:700;color:#fff;padding:0 10px 18px}
+  .side-brand .dot{color:#57D9A9}
+  .side-brand small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:#9DB4AC;font-weight:400;text-transform:uppercase}
+  .side-btn{
+    display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:600;font-size:14px;
+    color:#C7D4CF;background:none;border:none;border-radius:8px;padding:10px 12px;cursor:pointer;text-align:left;
+    transition:background .15s,color .15s;width:100%;
+  }
+  .side-btn:hover{background:#243430}
+  .side-btn.active{background:#0B7A5B;color:#fff}
+  .side-btn .badge{margin-left:auto;font-family:var(--mono);font-size:9.5px;background:#33473F;color:#9DB4AC;padding:2px 7px;border-radius:99px;letter-spacing:.05em}
+  .side-foot{margin-top:auto;padding:10px 12px;font-size:12px;color:#9DB4AC;border-top:1px solid #33473F}
+  .side-foot .mail{font-family:var(--mono);font-size:11px;word-break:break-all;color:#C7D4CF}
+  .side-foot button{background:none;border:1px solid #33473F;color:#C7D4CF;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;margin-top:10px;width:100%}
+  .side-foot button:hover{background:#243430}
+
+  .content{padding:30px 34px;max-width:1000px}
+  .content h2{font-family:var(--disp);font-size:22px;font-weight:600;margin-bottom:4px}
+  .content .sub{color:var(--ink-soft);font-size:13.5px;margin-bottom:22px}
+  .pane{display:none}
+  .pane.active{display:block;animation:fadeIn .25s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+
+  .mk-conn{display:flex;flex-direction:column;gap:12px}
+  .mk-head{display:flex;align-items:center;gap:10px}
+  .mk-logo{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:700;font-size:15px;color:#fff}
+  .lg-ml{background:#E6BE00;color:#3A3100}
+  .lg-sh{background:#EE4D2D}
+  .lg-az{background:#232F3E}
+  .mk-name{font-family:var(--disp);font-weight:600}
+  .mk-status{font-family:var(--mono);font-size:11px;padding:3px 9px;border-radius:99px;background:#E9ECEA;color:#6B7773;width:fit-content}
+  .mk-status.soon{background:var(--amber-soft);color:var(--amber)}
+  .btn-conn{background:var(--accent-soft);color:var(--accent);font-size:13px;padding:9px 16px}
+  .btn-conn[disabled]{opacity:.55;cursor:not-allowed}
+
+  .empty-mod{
+    border:1px dashed var(--line);border-radius:12px;padding:38px 24px;text-align:center;color:var(--ink-soft);
+    background:var(--surface);
+  }
+  .empty-mod .ico{font-size:30px;margin-bottom:8px}
+  .empty-mod b{color:var(--ink)}
+  .fase{display:inline-block;font-family:var(--mono);font-size:10.5px;background:var(--amber-soft);color:var(--amber);padding:3px 10px;border-radius:99px;margin-top:12px;letter-spacing:.05em}
+
+  .steps{font-size:13.5px;color:var(--ink-soft);display:flex;flex-direction:column;gap:8px}
+  .steps b{color:var(--ink)}
+
+  @media(max-width:760px){
+    .app.on{grid-template-columns:1fr}
+    aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center}
+    .side-brand{padding:0 10px;width:100%}
+    .side-btn{width:auto;font-size:13px;padding:8px 10px}
+    .side-btn .badge{display:none}
+    .side-foot{margin:0;border:none;width:100%;display:flex;gap:10px;align-items:center}
+    .side-foot button{width:auto;margin:0}
+    .content{padding:22px 18px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ TELA DE ACESSO ============ -->
+<div class="auth-wrap" id="auth">
+  <div class="auth-card">
+    <h1>Fatia<span class="dot">.</span>3D</h1>
+    <div class="auth-sub">sistema · gestão de marketplaces</div>
+
+    <div class="field">
+      <label for="a_email">E-mail</label>
+      <input id="a_email" type="email" autocomplete="email" placeholder="voce@email.com">
+    </div>
+    <div class="field">
+      <label for="a_senha">Senha</label>
+      <input id="a_senha" type="password" autocomplete="current-password" placeholder="mínimo 6 caracteres">
+    </div>
+
+    <button class="btn btn-main" id="btn_entrar">Entrar</button>
+    <div class="auth-msg" id="auth_msg" aria-live="polite"></div>
+
+    <div class="divider">ou</div>
+    <button class="gbtn" id="btn_google">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.1 29.4 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.1 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.6 39.6 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.7l6.2 5.2C36.9 40.4 44 36 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+      Entrar com Google
+    </button>
+
+    <div class="auth-toggle" id="toggle_signup">
+      Ainda não tem conta? <button id="btn_modo_cadastro">Cadastre-se</button>
+    </div>
+    <div class="auth-toggle" id="toggle_login" style="display:none">
+      Já tem conta? <button id="btn_modo_login">Entrar</button>
+    </div>
+
+    <a class="voltar" href="index.html">← Voltar para a calculadora</a>
+  </div>
+</div>
+
+<!-- ============ SISTEMA ============ -->
+<div class="app" id="app">
+  <aside>
+    <div class="side-brand">Fatia<span class="dot">.</span>3D<small>sistema</small></div>
+    <button class="side-btn active" data-pane="painel">📊 Painel</button>
+    <button class="side-btn" data-pane="pedidos">📦 Pedidos <span class="badge">fase 2</span></button>
+    <button class="side-btn" data-pane="mensagens">💬 Mensagens <span class="badge">fase 2</span></button>
+    <button class="side-btn" data-pane="notas">🧾 Notas fiscais <span class="badge">fase 4</span></button>
+    <button class="side-btn" data-pane="etiquetas">🏷 Etiquetas <span class="badge">fase 5</span></button>
+    <button class="side-btn" data-pane="conexoes">🔌 Conexões</button>
+    <div class="side-foot">
+      <div>Logado como</div>
+      <div class="mail" id="side_email"></div>
+      <button id="btn_sair">Sair</button>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <section class="pane active" id="pane-painel">
+      <h2>Painel</h2>
+      <div class="sub">Visão geral da sua operação — os números aparecem conforme os marketplaces forem conectados.</div>
+      <div class="card">
+        <div class="steps">
+          <div><b>Bem-vindo ao Fatia.3D Sistema!</b> Este é o começo da central que vai unificar sua operação de vendas. O plano de construção:</div>
+          <div>✅ <b>Fase 1 — Acesso e estrutura</b> (você está aqui): login por e-mail/senha ou Google, e a base de todos os módulos.</div>
+          <div>🔜 <b>Fase 2 — Mercado Livre:</b> conexão com sua loja, leitura de pedidos e mensagens.</div>
+          <div>🔜 <b>Fase 3 — Shopee:</b> mesma integração, via Shopee Open Platform.</div>
+          <div>🔜 <b>Fase 4 — Notas fiscais:</b> emissão de NF-e por API emissora, com seu certificado A1 guardado em cofre seguro.</div>
+          <div>🔜 <b>Fase 5 — Etiquetas e Amazon:</b> impressão de etiquetas direto do pedido e integração com a SP-API da Amazon.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane" id="pane-pedidos">
+      <h2>Pedidos</h2>
+      <div class="sub">Todos os pedidos dos seus marketplaces em um só lugar.</div>
+      <div class="empty-mod">
+        <div class="ico">📦</div>
+        Os pedidos aparecerão aqui automaticamente assim que você <b>conectar um marketplace</b> na aba Conexões.
+        <div><span class="fase">chega na fase 2</span></div>
+      </div>
+    </section>
+
+    <section class="pane" id="pane-mensagens">
+      <h2>Mensagens</h2>
+      <div class="sub">Perguntas e chats de compradores, unificados.</div>
+      <div class="empty-mod">
+        <div class="ico">💬</div>
+        As mensagens dos compradores do Mercado Livre e da Shopee serão listadas e respondidas por aqui.
+        <div><span class="fase">chega na fase 2</span></div>
+      </div>
+    </section>
+
+    <section class="pane" id="pane-notas">
+      <h2>Notas fiscais</h2>
+      <div class="sub">Emissão de NF-e vinculada aos pedidos.</div>
+      <div class="card">
+        <div class="steps">
+          <div><b>Como vai funcionar:</b> a emissão será feita através de uma API emissora homologada (Focus NFe, eNotas ou similar). Seu <b>certificado digital A1</b> ficará guardado no cofre criptografado da emissora — nunca neste sistema — e aqui você apenas clicará em "Emitir nota" no pedido.</div>
+          <div><b>O que você já pode providenciar:</b> um certificado digital <b>A1</b> em nome do seu CNPJ (emitido por certificadoras como Serasa, Certisign, Soluti — validade de 1 ano).</div>
+        </div>
+      </div>
+      <div class="empty-mod">
+        <div class="ico">🧾</div>
+        A tela de configuração fiscal (certificado, série, CFOP, ambiente de homologação/produção) será habilitada nesta aba.
+        <div><span class="fase">chega na fase 4</span></div>
+      </div>
+    </section>
+
+    <section class="pane" id="pane-etiquetas">
+      <h2>Etiquetas</h2>
+      <div class="sub">Impressão das etiquetas de envio direto do pedido.</div>
+      <div class="empty-mod">
+        <div class="ico">🏷</div>
+        As etiquetas são geradas pelos próprios marketplaces — aqui você vai baixá-las e imprimi-las em lote, sem entrar em cada painel.
+        <div><span class="fase">chega na fase 5</span></div>
+      </div>
+    </section>
+
+    <section class="pane" id="pane-conexoes">
+      <h2>Conexões</h2>
+      <div class="sub">Vincule suas lojas. Cada conexão é autorizada por você no site oficial do marketplace (OAuth) — o sistema nunca pede sua senha da loja.</div>
+      <div class="grid">
+        <div class="card mk-conn">
+          <div class="mk-head"><span class="mk-logo lg-ml">ML</span><div><div class="mk-name">Mercado Livre</div><span class="mk-status soon">próxima fase</span></div></div>
+          <div style="font-size:13px;color:var(--ink-soft)">Pedidos, mensagens e etiquetas da sua loja no Mercado Livre.</div>
+          <button class="btn btn-conn" disabled>Conectar (em breve)</button>
+        </div>
+        <div class="card mk-conn">
+          <div class="mk-head"><span class="mk-logo lg-sh">S</span><div><div class="mk-name">Shopee</div><span class="mk-status soon">fase 3</span></div></div>
+          <div style="font-size:13px;color:var(--ink-soft)">Pedidos e chat da sua loja Shopee, via Open Platform.</div>
+          <button class="btn btn-conn" disabled>Conectar (em breve)</button>
+        </div>
+        <div class="card mk-conn">
+          <div class="mk-head"><span class="mk-logo lg-az">a</span><div><div class="mk-name">Amazon</div><span class="mk-status soon">fase 5</span></div></div>
+          <div style="font-size:13px;color:var(--ink-soft)">Pedidos da sua conta Seller Central, via SP-API.</div>
+          <button class="btn btn-conn" disabled>Conectar (em breve)</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SUPABASE_URL = 'https://vrgbvslfgvxpznynaarp.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_QC0hu709T3KZL1zY6490ag_r_jjckYm';
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = id => document.getElementById(id);
+let modoCadastro = false;
+let user = null;
+
+/* ---------- alternância login/cadastro ---------- */
+function setModo(cadastro){
+  modoCadastro = cadastro;
+  $('btn_entrar').textContent = cadastro ? 'Criar conta' : 'Entrar';
+  $('toggle_signup').style.display = cadastro ? 'none' : 'block';
+  $('toggle_login').style.display  = cadastro ? 'block' : 'none';
+  $('a_senha').autocomplete = cadastro ? 'new-password' : 'current-password';
+  msg('');
+}
+$('btn_modo_cadastro').addEventListener('click', ()=> setModo(true));
+$('btn_modo_login').addEventListener('click', ()=> setModo(false));
+
+function msg(txt, tipo){
+  const el = $('auth_msg');
+  el.textContent = txt;
+  el.className = 'auth-msg' + (tipo ? ' ' + tipo : '');
+}
+
+const ERROS = {
+  'Invalid login credentials': 'E-mail ou senha incorretos.',
+  'User already registered': 'Este e-mail já tem conta. Use "Entrar".',
+  'Password should be at least 6 characters': 'A senha precisa ter pelo menos 6 caracteres.',
+  'Email not confirmed': 'Confirme seu e-mail: enviamos um link para sua caixa de entrada.',
+  'missing email or phone': 'Preencha o e-mail.',
+};
+const traduz = e => ERROS[e] || e;
+
+/* ---------- entrar / cadastrar ---------- */
+async function autenticar(){
+  const email = $('a_email').value.trim();
+  const senha = $('a_senha').value;
+  if (!email || !senha){ msg('Preencha e-mail e senha.', 'err'); return; }
+  $('btn_entrar').disabled = true;
+  try{
+    if (modoCadastro){
+      const { data, error } = await sb.auth.signUp({ email, password: senha });
+      if (error) throw error;
+      if (data.session){ /* logado direto (confirmação de e-mail desativada) */ }
+      else { msg('Conta criada! Verifique seu e-mail para confirmar o cadastro.', 'ok'); }
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+      if (error) throw error;
+    }
+  }catch(e){ msg(traduz(e.message), 'err'); }
+  $('btn_entrar').disabled = false;
+}
+$('btn_entrar').addEventListener('click', autenticar);
+$('a_senha').addEventListener('keydown', e=>{ if (e.key === 'Enter') autenticar(); });
+
+$('btn_google').addEventListener('click', async ()=>{
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + window.location.pathname }
+  });
+  if (error) msg('Não foi possível iniciar o login: ' + error.message, 'err');
+});
+
+$('btn_sair').addEventListener('click', ()=> sb.auth.signOut());
+
+/* ---------- estado do app ---------- */
+function render(){
+  const logado = !!user;
+  $('auth').style.display = logado ? 'none' : 'flex';
+  $('app').classList.toggle('on', logado);
+  if (logado) $('side_email').textContent = user.email || user.user_metadata?.full_name || '';
+}
+
+sb.auth.onAuthStateChange((_e, session)=>{
+  user = session?.user || null;
+  render();
+});
+(async ()=>{
+  const { data:{ session } } = await sb.auth.getSession();
+  user = session?.user || null;
+  render();
+})();
+
+/* ---------- navegação lateral ---------- */
+document.querySelectorAll('.side-btn').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.side-btn').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    $('pane-' + b.dataset.pane).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
