@@ -98,7 +98,7 @@
   #edit_flag{font-family:var(--mono);font-size:12px;color:var(--amber);display:none}
 
   .table-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow-x:auto}
-  table{width:100%;border-collapse:collapse;min-width:840px}
+  table{width:100%;border-collapse:collapse;min-width:920px}
   th{
     font-family:var(--disp);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
     color:var(--ink-soft);text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);
@@ -111,11 +111,13 @@
   th.col-ml,td.col-ml{color:#8A6D00;background:#FFFBEB}
   th.col-sh,td.col-sh{color:#C2481A;background:#FFF3EC}
   th.col-az,td.col-az{color:#1F5C8B;background:#EFF6FC}
+  th.col-mg,td.col-mg{color:#0067C7;background:#E9F3FF}
   th.col-lu,td.col-lu{color:#0B7A5B;background:#EDF7F1}
-  td.col-ml,td.col-sh,td.col-az,td.col-lu{font-weight:700}
+  td.col-ml,td.col-sh,td.col-az,td.col-mg,td.col-lu{font-weight:700}
   .val.c-ml{color:#F2C94C}
   .val.c-sh{color:#FF9A6B}
   .val.c-az{color:#7CC0F0}
+  .val.c-mg{color:#5FA8FF}
   td .pname{font-weight:600}
   tr.inactive td{opacity:.45}
   tr.inactive td:last-child,tr.inactive td.status-cell{opacity:1}
@@ -131,7 +133,7 @@
 
   .note{background:var(--amber-soft);border:1px solid #EDD9B4;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#6E4E12;margin-top:16px}
   .mk-badge{font-family:var(--mono);font-size:10.5px;padding:2px 8px;border-radius:99px}
-  .b-shopee{background:#FDEBE4;color:#C2452D}.b-ml{background:#FFF6D6;color:#8A6D00}.b-amz{background:#E4EEF7;color:#1F5C8B}
+  .b-shopee{background:#FDEBE4;color:#C2452D}.b-ml{background:#FFF6D6;color:#8A6D00}.b-amz{background:#E4EEF7;color:#1F5C8B}.b-mg{background:#DDEEFF;color:#0067C7}
 
   dialog{
     border:none;border-radius:14px;padding:0;max-width:920px;width:calc(100vw - 32px);
@@ -269,6 +271,7 @@
         <div class="big"><span class="lbl">Mercado Livre</span><span class="val sm c-ml" id="pv_ml">R$ 0,00</span></div>
         <div class="big"><span class="lbl">Shopee</span><span class="val sm c-sh" id="pv_sh">R$ 0,00</span></div>
         <div class="big"><span class="lbl">Amazon</span><span class="val sm c-az" id="pv_az">R$ 0,00</span></div>
+        <div class="big"><span class="lbl">Magalu</span><span class="val sm c-mg" id="pv_mg">R$ 0,00</span></div>
       </div>
 
       <div class="actions">
@@ -301,6 +304,7 @@
             <th class="num col-ml">Mercado Livre</th>
             <th class="num col-sh">Shopee</th>
             <th class="num col-az">Amazon</th>
+            <th class="num col-mg">Magalu</th>
             <th style="text-align:center">Status</th>
             <th style="text-align:right">Ações</th>
           </tr>
@@ -444,6 +448,21 @@
           <div class="hint">Ex.: Simples Nacional ≈ 4–6%. Deixe 0 se não emite nota.</div>
         </div>
       </div>
+
+      <div class="card" style="border:none;padding:0">
+        <h3>Magalu <span class="mk-badge b-mg">editável</span></h3>
+        <div class="field row2">
+          <div>
+            <label for="mg_com">Comissão</label>
+            <div class="in"><input id="mg_com" type="number" value="18" min="0" step="0.5"><span class="unit">%</span></div>
+          </div>
+          <div>
+            <label for="mg_fixa">Tarifa fixa por item</label>
+            <div class="in"><input id="mg_fixa" type="number" value="4" min="0" step="0.25"><span class="unit">R$</span></div>
+          </div>
+        </div>
+        <div class="hint">Comissão varia de 10–20% por categoria; novos sellers têm promoção de 9,9% por tempo limitado. Tarifa fixa de ~R$ 3–5 em itens acima de R$ 10.</div>
+      </div>
     </div>
 
     <div class="note">⚠ Taxas de referência editáveis — as plataformas mudam comissões e faixas com frequência. Confira os valores atuais no painel de vendedor antes de anunciar.</div>
@@ -561,7 +580,7 @@ const isPro = () => plano === 'pro' || plano === 'admin';
 
 const CFG_IDS = ['cfg_fil_preco','cfg_desp','cfg_pot','cfg_tarifa','cfg_mq_valor','cfg_mq_vida','cfg_mq_manut',
                  'cfg_mo_min','cfg_mo_hora','cfg_falha','cfg_extras',
-                 'sh_com','sh_extra','sh_fixa','ml_com','ml_fixa','ml_frete','az_com','az_fixa','cfg_imposto'];
+                 'sh_com','sh_extra','sh_fixa','ml_com','ml_fixa','ml_frete','az_com','az_fixa','mg_com','mg_fixa','cfg_imposto'];
 const LOCAL_KEY = 'fatia3d-local';
 
 function snapshot(){
@@ -659,13 +678,14 @@ function precosProduto(p){
   const imposto = num('cfg_imposto')/100;
   const sh = precoAnuncio(direto, num('sh_com')/100 + num('sh_extra')/100 + imposto, num('sh_fixa'));
   const az = precoAnuncio(direto, num('az_com')/100 + imposto, num('az_fixa'));
+  const mg = precoAnuncio(direto, num('mg_com')/100 + imposto, num('mg_fixa'));
   const mlPct = num('ml_com')/100 + imposto;
   let ml = precoAnuncio(direto, mlPct, num('ml_fixa'));
   if (isFinite(ml) && ml >= 79){
     const alt = precoAnuncio(direto, mlPct, num('ml_frete'));
     ml = (isFinite(alt) && alt >= 79) ? alt : ml;
   }
-  return { custo, direto, ml, sh, az, lucro: direto - custo };
+  return { custo, direto, ml, sh, az, mg, lucro: direto - custo };
 }
 const fmtTempo = t => { const h = Math.floor(t), m = Math.round((t-h)*60); return h + 'h' + (m ? String(m).padStart(2,'0') : ''); };
 
@@ -678,6 +698,7 @@ function renderPreview(){
   $('pv_ml').textContent = brl(r.ml);
   $('pv_sh').textContent = brl(r.sh);
   $('pv_az').textContent = brl(r.az);
+  $('pv_mg').textContent = brl(r.mg);
 }
 function renderTable(){
   $('tbody').innerHTML = produtos.map(p=>{
@@ -689,6 +710,7 @@ function renderTable(){
       <td class="num col-ml">${brl(r.ml)}</td>
       <td class="num col-sh">${brl(r.sh)}</td>
       <td class="num col-az">${brl(r.az)}</td>
+      <td class="num col-mg">${brl(r.mg)}</td>
       <td class="status-cell" style="text-align:center">
         <select class="status ${p.ativo?'on':'off'}" aria-label="Status de ${esc(p.nome)}">
           <option value="1" ${p.ativo?'selected':''}>● Ativo</option>
