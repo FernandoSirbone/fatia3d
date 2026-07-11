@@ -122,6 +122,18 @@
   .st-paid{background:#DCF5EA;color:#0B7A5B}
   .st-cancel{background:#FBE7E2;color:#C2452D}
   .st-other{background:#E9ECEA;color:#6B7773}
+  .st-ship{background:#E4EEF7;color:#1F5C8B}
+  .st-done{background:#DCF5EA;color:#0B7A5B}
+  .st-prep{background:var(--amber-soft);color:var(--amber)}
+  .filtros{display:flex;gap:6px;flex-wrap:wrap}
+  .chip-f{
+    font-family:var(--mono);font-size:11.5px;font-weight:700;border:1px solid var(--line);
+    background:var(--surface);color:var(--ink-soft);border-radius:99px;padding:6px 13px;cursor:pointer;
+    transition:background .15s,color .15s,border-color .15s;
+  }
+  .chip-f:hover{border-color:var(--accent)}
+  .chip-f.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .chip-f:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
   @media(max-width:760px){
     .app.on{grid-template-columns:1fr}
@@ -226,13 +238,20 @@
     <section class="pane" id="pane-pedidos">
       <h2>Pedidos</h2>
       <div class="sub">Pedidos da sua loja no Mercado Livre, do mais recente para o mais antigo.</div>
-      <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center">
+      <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-conn" id="btn_ped_refresh" style="width:auto">↻ Atualizar</button>
+        <div class="filtros" id="ped_filtros">
+          <button class="chip-f active" data-f="todos">Todos</button>
+          <button class="chip-f" data-f="a_enviar">A enviar</button>
+          <button class="chip-f" data-f="enviado">Enviados</button>
+          <button class="chip-f" data-f="entregue">Entregues</button>
+          <button class="chip-f" data-f="cancelado">Cancelados</button>
+        </div>
         <span style="font-family:var(--mono);font-size:12px;color:var(--ink-soft)" id="ped_info"></span>
       </div>
       <div class="card" style="padding:0;overflow-x:auto">
         <table class="tbl">
-          <thead><tr><th>Data</th><th>Pedido</th><th>Comprador</th><th>Itens</th><th style="text-align:right">Total</th><th>Status</th></tr></thead>
+          <thead><tr><th>Data</th><th>Pedido</th><th>Comprador</th><th>Itens</th><th style="text-align:right">Total</th><th>Pagamento</th><th>Envio</th></tr></thead>
           <tbody id="ped_tbody"></tbody>
         </table>
         <div class="empty-mod" id="ped_empty" style="border:none;border-radius:0">
@@ -483,7 +502,39 @@ const fmtData = iso => new Date(iso).toLocaleString('pt-BR', { day:'2-digit', mo
 const fmtBRL = v => (v ?? 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
 const ST_NOMES = { paid:'pago', confirmed:'confirmado', cancelled:'cancelado', payment_required:'aguardando pgto', payment_in_process:'processando pgto' };
 const stClass = s => s === 'paid' || s === 'confirmed' ? 'st-paid' : (s === 'cancelled' ? 'st-cancel' : 'st-other');
+const ENVIO_NOMES = { pending:'pendente', handling:'preparando', ready_to_ship:'pronto p/ envio', shipped:'enviado', delivered:'entregue', not_delivered:'não entregue', cancelled:'cancelado' };
+const envioClass = s => s === 'delivered' ? 'st-done' : (s === 'shipped' ? 'st-ship' : (s === 'cancelled' || s === 'not_delivered' ? 'st-cancel' : 'st-prep'));
 const escS = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let pedidosCache = [];
+let pedFiltro = 'todos';
+
+// classifica cada pedido em uma das categorias dos filtros
+function categoria(p){
+  if (p.status === 'cancelled' || p.envio === 'cancelled') return 'cancelado';
+  if (p.envio === 'delivered') return 'entregue';
+  if (p.envio === 'shipped') return 'enviado';
+  return 'a_enviar'; // pago/aguardando, ainda não despachado
+}
+
+function renderPedidos(){
+  const tb = $('ped_tbody'), empty = $('ped_empty');
+  const lista = pedFiltro === 'todos' ? pedidosCache : pedidosCache.filter(p => categoria(p) === pedFiltro);
+  empty.style.display = lista.length ? 'none' : 'block';
+  if (!lista.length && pedidosCache.length){
+    $('ped_empty_txt').textContent = 'Nenhum pedido nesse filtro.';
+  }
+  tb.innerHTML = lista.map(p => `<tr>
+    <td class="mono">${fmtData(p.data)}</td>
+    <td class="mono">#${p.id}</td>
+    <td>${escS(p.comprador)}</td>
+    <td>${escS(p.itens)}</td>
+    <td class="mono" style="text-align:right">${fmtBRL(p.total)}</td>
+    <td><span class="st ${stClass(p.status)}">${ST_NOMES[p.status] || escS(p.status)}</span></td>
+    <td>${p.envio ? `<span class="st ${envioClass(p.envio)}">${ENVIO_NOMES[p.envio] || escS(p.envio)}</span>` : '<span class="st st-other">—</span>'}</td>
+  </tr>`).join('');
+  $('ped_info').textContent = lista.length + ' de ' + pedidosCache.length + ' pedido(s) · atualizado ' + new Date().toLocaleTimeString('pt-BR');
+}
 
 async function carregarPedidos(){
   const tb = $('ped_tbody'), empty = $('ped_empty'), info = $('ped_info');
@@ -491,6 +542,7 @@ async function carregarPedidos(){
   const r = await mlApi('orders');
   if (r.error){
     tb.innerHTML = '';
+    pedidosCache = [];
     empty.style.display = 'block';
     $('ped_empty_txt').innerHTML = r.error.includes('conectado')
       ? 'Conecte o Mercado Livre na aba <b>Conexões</b> para ver seus pedidos aqui.'
@@ -498,20 +550,19 @@ async function carregarPedidos(){
     info.textContent = '';
     return;
   }
-  const pedidos = r.orders || [];
-  empty.style.display = pedidos.length ? 'none' : 'block';
-  if (!pedidos.length) $('ped_empty_txt').textContent = 'Nenhum pedido encontrado na sua loja ainda.';
-  tb.innerHTML = pedidos.map(p => `<tr>
-    <td class="mono">${fmtData(p.data)}</td>
-    <td class="mono">#${p.id}</td>
-    <td>${escS(p.comprador)}</td>
-    <td>${escS(p.itens)}</td>
-    <td class="mono" style="text-align:right">${fmtBRL(p.total)}</td>
-    <td><span class="st ${stClass(p.status)}">${ST_NOMES[p.status] || escS(p.status)}</span></td>
-  </tr>`).join('');
-  info.textContent = pedidos.length + ' pedido(s) · atualizado ' + new Date().toLocaleTimeString('pt-BR');
+  pedidosCache = r.orders || [];
+  if (!pedidosCache.length) $('ped_empty_txt').textContent = 'Nenhum pedido encontrado na sua loja ainda.';
+  renderPedidos();
 }
 $('btn_ped_refresh').addEventListener('click', carregarPedidos);
+
+$('ped_filtros').addEventListener('click', e=>{
+  const b = e.target.closest('.chip-f'); if (!b) return;
+  document.querySelectorAll('#ped_filtros .chip-f').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  pedFiltro = b.dataset.f;
+  renderPedidos();
+});
 
 /* ---------- mensagens ---------- */
 async function carregarMensagens(){
