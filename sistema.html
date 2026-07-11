@@ -125,6 +125,10 @@
   .st-ship{background:#E4EEF7;color:#1F5C8B}
   .st-done{background:#DCF5EA;color:#0B7A5B}
   .st-prep{background:var(--amber-soft);color:var(--amber)}
+  .canal{font-family:var(--disp);font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:6px;white-space:nowrap;letter-spacing:.03em}
+  .canal-ml{background:#FFF1B8;color:#7A6000}
+  .canal-shopee{background:#FDDDD3;color:#C2452D}
+  .canal-amazon{background:#D9E7F5;color:#1F5C8B}
   .filtros{display:flex;gap:6px;flex-wrap:wrap}
   .chip-f{
     font-family:var(--mono);font-size:11.5px;font-weight:700;border:1px solid var(--line);
@@ -251,7 +255,7 @@
       </div>
       <div class="card" style="padding:0;overflow-x:auto">
         <table class="tbl">
-          <thead><tr><th>Data</th><th>Pedido</th><th>Comprador</th><th>Itens</th><th style="text-align:right">Total</th><th>Pagamento</th><th>Envio</th></tr></thead>
+          <thead><tr><th>Canal</th><th>Data</th><th>Pedido</th><th>Comprador</th><th>Itens</th><th style="text-align:right">Total</th><th>Pagamento</th><th>Envio</th></tr></thead>
           <tbody id="ped_tbody"></tbody>
         </table>
         <div class="empty-mod" id="ped_empty" style="border:none;border-radius:0">
@@ -534,6 +538,12 @@ function categoria(p){
   return 'a_enviar'; // pago/aguardando, ainda não despachado
 }
 
+const CANAIS = { ml: ['Mercado Livre','canal-ml'], shopee: ['Shopee','canal-shopee'], amazon: ['Amazon','canal-amazon'] };
+function badgeCanal(c){
+  const [nome, cls] = CANAIS[c] || ['—','canal-ml'];
+  return `<span class="canal ${cls}">${nome}</span>`;
+}
+
 function renderPedidos(){
   const tb = $('ped_tbody'), empty = $('ped_empty');
   const lista = pedFiltro === 'todos' ? pedidosCache : pedidosCache.filter(p => categoria(p) === pedFiltro);
@@ -542,6 +552,7 @@ function renderPedidos(){
     $('ped_empty_txt').textContent = 'Nenhum pedido nesse filtro.';
   }
   tb.innerHTML = lista.map(p => `<tr>
+    <td>${badgeCanal(p.canal || 'ml')}</td>
     <td class="mono">${fmtData(p.data)}</td>
     <td class="mono">#${p.id}</td>
     <td>${escS(p.comprador)}</td>
