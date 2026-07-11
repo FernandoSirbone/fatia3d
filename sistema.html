@@ -113,6 +113,16 @@
   .steps{font-size:13.5px;color:var(--ink-soft);display:flex;flex-direction:column;gap:8px}
   .steps b{color:var(--ink)}
 
+  .tbl{width:100%;border-collapse:collapse;min-width:720px}
+  .tbl th{font-family:var(--disp);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);background:#FAFBF9;white-space:nowrap}
+  .tbl td{padding:11px 14px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl .mono{font-family:var(--mono)}
+  .st{font-family:var(--mono);font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap}
+  .st-paid{background:#DCF5EA;color:#0B7A5B}
+  .st-cancel{background:#FBE7E2;color:#C2452D}
+  .st-other{background:#E9ECEA;color:#6B7773}
+
   @media(max-width:760px){
     .app.on{grid-template-columns:1fr}
     aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center}
@@ -215,21 +225,35 @@
 
     <section class="pane" id="pane-pedidos">
       <h2>Pedidos</h2>
-      <div class="sub">Todos os pedidos dos seus marketplaces em um só lugar.</div>
-      <div class="empty-mod">
-        <div class="ico">📦</div>
-        Os pedidos aparecerão aqui automaticamente assim que você <b>conectar um marketplace</b> na aba Conexões.
-        <div><span class="fase">chega na fase 2</span></div>
+      <div class="sub">Pedidos da sua loja no Mercado Livre, do mais recente para o mais antigo.</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center">
+        <button class="btn btn-conn" id="btn_ped_refresh" style="width:auto">↻ Atualizar</button>
+        <span style="font-family:var(--mono);font-size:12px;color:var(--ink-soft)" id="ped_info"></span>
+      </div>
+      <div class="card" style="padding:0;overflow-x:auto">
+        <table class="tbl">
+          <thead><tr><th>Data</th><th>Pedido</th><th>Comprador</th><th>Itens</th><th style="text-align:right">Total</th><th>Status</th></tr></thead>
+          <tbody id="ped_tbody"></tbody>
+        </table>
+        <div class="empty-mod" id="ped_empty" style="border:none;border-radius:0">
+          <div class="ico">📦</div>
+          <span id="ped_empty_txt">Conecte o Mercado Livre na aba <b>Conexões</b> para ver seus pedidos aqui.</span>
+        </div>
       </div>
     </section>
 
     <section class="pane" id="pane-mensagens">
       <h2>Mensagens</h2>
-      <div class="sub">Perguntas e chats de compradores, unificados.</div>
-      <div class="empty-mod">
-        <div class="ico">💬</div>
-        As mensagens dos compradores do Mercado Livre e da Shopee serão listadas e respondidas por aqui.
-        <div><span class="fase">chega na fase 2</span></div>
+      <div class="sub">Mensagens pós-venda dos compradores no Mercado Livre.</div>
+      <div class="card" style="text-align:center;padding:34px 24px">
+        <div style="font-size:34px" id="msg_ico">💬</div>
+        <div style="font-family:var(--disp);font-size:20px;font-weight:600;margin:8px 0 4px" id="msg_count">—</div>
+        <div style="font-size:13px;color:var(--ink-soft);margin-bottom:16px" id="msg_txt">Conecte o Mercado Livre para ver suas mensagens.</div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-conn" id="btn_msg_refresh" style="width:auto">↻ Atualizar</button>
+          <a class="btn btn-conn" style="width:auto;text-decoration:none" href="https://www.mercadolivre.com.br/vendas/mensagens" target="_blank" rel="noopener">Responder no ML ↗</a>
+        </div>
+        <div class="hint" style="margin-top:14px">A leitura e resposta das conversas direto por aqui chega na evolução da Fase 2.</div>
       </div>
     </section>
 
@@ -264,9 +288,9 @@
       <div class="sub">Vincule suas lojas. Cada conexão é autorizada por você no site oficial do marketplace (OAuth) — o sistema nunca pede sua senha da loja.</div>
       <div class="grid">
         <div class="card mk-conn">
-          <div class="mk-head"><span class="mk-logo lg-ml">ML</span><div><div class="mk-name">Mercado Livre</div><span class="mk-status soon">próxima fase</span></div></div>
-          <div style="font-size:13px;color:var(--ink-soft)">Pedidos, mensagens e etiquetas da sua loja no Mercado Livre.</div>
-          <button class="btn btn-conn" disabled>Conectar (em breve)</button>
+          <div class="mk-head"><span class="mk-logo lg-ml">ML</span><div><div class="mk-name">Mercado Livre</div><span class="mk-status" id="ml_status">verificando…</span></div></div>
+          <div style="font-size:13px;color:var(--ink-soft)" id="ml_desc">Pedidos, mensagens e etiquetas da sua loja no Mercado Livre.</div>
+          <button class="btn btn-conn" id="btn_ml_conn" disabled>…</button>
         </div>
         <div class="card mk-conn">
           <div class="mk-head"><span class="mk-logo lg-sh">S</span><div><div class="mk-name">Shopee</div><span class="mk-status soon">fase 3</span></div></div>
@@ -372,7 +396,10 @@ async function render(){
   $('auth').style.display = 'none';
   $('app').classList.toggle('on', admin);
   $('restrito').style.display = admin ? 'none' : 'flex';
-  if (admin) $('side_email').textContent = user.email || user.user_metadata?.full_name || '';
+  if (admin){
+    $('side_email').textContent = user.email || user.user_metadata?.full_name || '';
+    statusML();
+  }
   else $('r_email').textContent = user.email || '';
 }
 $('btn_sair_restrito').addEventListener('click', ()=> sb.auth.signOut());
@@ -394,8 +421,127 @@ document.querySelectorAll('.side-btn').forEach(b=>{
     document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));
     b.classList.add('active');
     $('pane-' + b.dataset.pane).classList.add('active');
+    if (b.dataset.pane === 'pedidos') carregarPedidos();
+    if (b.dataset.pane === 'mensagens') carregarMensagens();
+    if (b.dataset.pane === 'conexoes') statusML();
   });
 });
+
+/* ================================================================
+   INTEGRAÇÃO MERCADO LIVRE (Fase 2)
+================================================================ */
+const ML_CLIENT_ID = '1465267404718685';
+const FUNC = SUPABASE_URL + '/functions/v1';
+let mlConectado = false;
+
+async function mlApi(action){
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session) return { error: 'sem sessão' };
+  const r = await fetch(FUNC + '/ml-api', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'Authorization': 'Bearer ' + session.access_token },
+    body: JSON.stringify({ action })
+  });
+  return r.json().catch(()=>({ error: 'resposta inválida' }));
+}
+
+/* ---------- status e conexão ---------- */
+async function statusML(){
+  const st = $('ml_status'), btn = $('btn_ml_conn');
+  st.textContent = 'verificando…'; st.className = 'mk-status';
+  const r = await mlApi('status');
+  mlConectado = !!r.connected;
+  if (mlConectado){
+    st.textContent = '● conectado: ' + (r.nickname || 'sua loja');
+    st.style.background = '#DCF5EA'; st.style.color = '#0B7A5B';
+    btn.textContent = 'Desconectar'; btn.disabled = false;
+    btn.onclick = async ()=>{
+      if (!confirm('Desconectar sua loja do Mercado Livre?')) return;
+      btn.disabled = true;
+      await mlApi('disconnect');
+      statusML();
+    };
+  } else {
+    st.textContent = 'não conectado';
+    st.style.background = ''; st.style.color = '';
+    btn.textContent = 'Conectar Mercado Livre'; btn.disabled = false;
+    btn.onclick = conectarML;
+  }
+}
+
+async function conectarML(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session) return;
+  const redirect = encodeURIComponent(FUNC + '/ml-oauth-callback');
+  // state = sua sessão: é assim que a função sabe QUEM está conectando
+  const url = `https://auth.mercadolivre.com.br/authorization?response_type=code&client_id=${ML_CLIENT_ID}&redirect_uri=${redirect}&state=${encodeURIComponent(session.access_token)}`;
+  window.location.href = url;
+}
+
+/* ---------- pedidos ---------- */
+const fmtData = iso => new Date(iso).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
+const fmtBRL = v => (v ?? 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+const ST_NOMES = { paid:'pago', confirmed:'confirmado', cancelled:'cancelado', payment_required:'aguardando pgto', payment_in_process:'processando pgto' };
+const stClass = s => s === 'paid' || s === 'confirmed' ? 'st-paid' : (s === 'cancelled' ? 'st-cancel' : 'st-other');
+const escS = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function carregarPedidos(){
+  const tb = $('ped_tbody'), empty = $('ped_empty'), info = $('ped_info');
+  info.textContent = 'carregando…';
+  const r = await mlApi('orders');
+  if (r.error){
+    tb.innerHTML = '';
+    empty.style.display = 'block';
+    $('ped_empty_txt').innerHTML = r.error.includes('conectado')
+      ? 'Conecte o Mercado Livre na aba <b>Conexões</b> para ver seus pedidos aqui.'
+      : 'Não foi possível carregar: ' + escS(r.error);
+    info.textContent = '';
+    return;
+  }
+  const pedidos = r.orders || [];
+  empty.style.display = pedidos.length ? 'none' : 'block';
+  if (!pedidos.length) $('ped_empty_txt').textContent = 'Nenhum pedido encontrado na sua loja ainda.';
+  tb.innerHTML = pedidos.map(p => `<tr>
+    <td class="mono">${fmtData(p.data)}</td>
+    <td class="mono">#${p.id}</td>
+    <td>${escS(p.comprador)}</td>
+    <td>${escS(p.itens)}</td>
+    <td class="mono" style="text-align:right">${fmtBRL(p.total)}</td>
+    <td><span class="st ${stClass(p.status)}">${ST_NOMES[p.status] || escS(p.status)}</span></td>
+  </tr>`).join('');
+  info.textContent = pedidos.length + ' pedido(s) · atualizado ' + new Date().toLocaleTimeString('pt-BR');
+}
+$('btn_ped_refresh').addEventListener('click', carregarPedidos);
+
+/* ---------- mensagens ---------- */
+async function carregarMensagens(){
+  const r = await mlApi('unread');
+  if (r.error){
+    $('msg_count').textContent = '—';
+    $('msg_txt').textContent = r.error.includes('conectado')
+      ? 'Conecte o Mercado Livre na aba Conexões para ver suas mensagens.'
+      : 'Não foi possível carregar: ' + r.error;
+    return;
+  }
+  const n = r.unread ?? 0;
+  $('msg_ico').textContent = n > 0 ? '📬' : '📭';
+  $('msg_count').textContent = n === 0 ? 'Nenhuma mensagem não lida' : n + ' mensagem(ns) não lida(s)';
+  $('msg_txt').textContent = n === 0 ? 'Caixa em dia! 🎉' : 'Você tem compradores esperando resposta.';
+}
+$('btn_msg_refresh').addEventListener('click', carregarMensagens);
+
+/* ---------- retorno da autorização (?ml=ok / ?ml=erro) ---------- */
+(function(){
+  const q = new URLSearchParams(window.location.search);
+  if (!q.has('ml')) return;
+  const ok = q.get('ml') === 'ok';
+  const motivo = q.get('motivo') || '';
+  history.replaceState({}, '', window.location.pathname); // limpa a URL
+  setTimeout(()=>{
+    if (ok) alert('✅ Mercado Livre conectado com sucesso!');
+    else alert('❌ Não foi possível conectar: ' + (motivo || 'tente novamente'));
+  }, 400);
+})();
 </script>
 </body>
 </html>
