@@ -165,6 +165,11 @@
   .chip-f:hover{border-color:var(--accent)}
   .chip-f.active{background:var(--accent);border-color:var(--accent);color:#fff}
   .chip-f:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .sel-qtd{
+    font-family:var(--mono);font-size:12px;font-weight:700;border:1px solid var(--line);
+    background:var(--surface);color:var(--ink-soft);border-radius:99px;padding:7px 12px;cursor:pointer;
+  }
+  .sel-qtd:focus-visible{outline:2px solid var(--accent)}
 
   @media(max-width:760px){
     .app.on{grid-template-columns:1fr}
@@ -326,6 +331,11 @@
       <div class="sub">Pedidos da sua loja no Mercado Livre, do mais recente para o mais antigo.</div>
       <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-conn" id="btn_ped_refresh" style="width:auto">↻ Atualizar</button>
+        <select id="ped_qtd" class="sel-qtd" title="Quantos pedidos buscar">
+          <option value="50" selected>últimos 50</option>
+          <option value="150">últimos 150</option>
+          <option value="300">últimos 300</option>
+        </select>
         <div class="filtros" id="ped_filtros">
           <button class="chip-f active" data-f="todos">Todos</button>
           <button class="chip-f" data-f="a_enviar">A enviar</button>
@@ -541,14 +551,14 @@ const ML_CLIENT_ID = '1465267404718685';
 const FUNC = SUPABASE_URL + '/functions/v1';
 let mlConectado = false;
 
-async function mlApi(action){
+async function mlApi(action, params = {}){
   try{
     const { data:{ session } } = await sb.auth.getSession();
     if (!session) return { error: 'sem sessão' };
     const r = await fetch(FUNC + '/ml-api', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization': 'Bearer ' + session.access_token },
-      body: JSON.stringify({ action })
+      body: JSON.stringify({ action, ...params })
     });
     const d = await r.json().catch(()=>null);
     if (!d) return { error: 'resposta inválida da função (HTTP ' + r.status + ')' };
@@ -651,7 +661,7 @@ function renderPedidos(){
 async function carregarPedidos(){
   const tb = $('ped_tbody'), empty = $('ped_empty'), info = $('ped_info');
   info.textContent = 'carregando…';
-  const r = await mlApi('orders');
+  const r = await mlApi('orders', { quantidade: parseInt($('ped_qtd').value) || 50 });
   if (r.error){
     tb.innerHTML = '';
     pedidosCache = [];
@@ -667,6 +677,7 @@ async function carregarPedidos(){
   renderPedidos();
 }
 $('btn_ped_refresh').addEventListener('click', carregarPedidos);
+$('ped_qtd').addEventListener('change', carregarPedidos);
 
 $('ped_filtros').addEventListener('click', e=>{
   const b = e.target.closest('.chip-f'); if (!b) return;
@@ -743,7 +754,7 @@ async function carregarPainel(){
 
   $('painel_info').textContent =
     'mês desde ' + mesIni.toLocaleDateString('pt-BR') +
-    ' · com base nos últimos 50 pedidos · atualizado ' + new Date().toLocaleTimeString('pt-BR');
+    ' · com base nos últimos ' + pedidosCache.length + ' pedidos · atualizado ' + new Date().toLocaleTimeString('pt-BR');
 
   iniciarPeriodoPadrao();
 }
@@ -786,7 +797,7 @@ function calcularPeriodo(){
   if (pedidosCache.length){
     const maisAntigo = new Date(Math.min(...pedidosCache.map(p => new Date(p.data).getTime())));
     if (de < maisAntigo){
-      aviso = '⚠ período pode estar incompleto: base atual são os últimos 50 pedidos (mais antigo: ' + maisAntigo.toLocaleDateString('pt-BR') + ')';
+      aviso = '⚠ período pode estar incompleto: base atual são os últimos ' + pedidosCache.length + ' pedidos (mais antigo: ' + maisAntigo.toLocaleDateString('pt-BR') + '). Aumente a busca na aba Pedidos.';
     }
   }
   $('per_aviso').textContent = aviso;
