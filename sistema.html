@@ -454,14 +454,22 @@ const FUNC = SUPABASE_URL + '/functions/v1';
 let mlConectado = false;
 
 async function mlApi(action){
-  const { data:{ session } } = await sb.auth.getSession();
-  if (!session) return { error: 'sem sessão' };
-  const r = await fetch(FUNC + '/ml-api', {
-    method: 'POST',
-    headers: { 'Content-Type':'application/json', 'Authorization': 'Bearer ' + session.access_token },
-    body: JSON.stringify({ action })
-  });
-  return r.json().catch(()=>({ error: 'resposta inválida' }));
+  try{
+    const { data:{ session } } = await sb.auth.getSession();
+    if (!session) return { error: 'sem sessão' };
+    const r = await fetch(FUNC + '/ml-api', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization': 'Bearer ' + session.access_token },
+      body: JSON.stringify({ action })
+    });
+    const d = await r.json().catch(()=>null);
+    if (!d) return { error: 'resposta inválida da função (HTTP ' + r.status + ')' };
+    if (!r.ok && !d.error) return { error: d.msg || d.message || ('HTTP ' + r.status) };
+    return d;
+  }catch(e){
+    console.error('mlApi', e);
+    return { error: 'não foi possível falar com a função ml-api — verifique se a opção "Verify JWT" dela está DESATIVADA no Supabase' };
+  }
 }
 
 /* ---------- status e conexão ---------- */
@@ -469,6 +477,15 @@ async function statusML(){
   const st = $('ml_status'), btn = $('btn_ml_conn');
   st.textContent = 'verificando…'; st.className = 'mk-status';
   const r = await mlApi('status');
+  if (r.error){
+    st.textContent = 'erro — veja o console (F12)';
+    st.style.background = '#FBE7E2'; st.style.color = '#C2452D';
+    st.title = r.error;
+    console.error('status ML:', r.error);
+    btn.textContent = 'Tentar de novo'; btn.disabled = false;
+    btn.onclick = statusML;
+    return;
+  }
   mlConectado = !!r.connected;
   if (mlConectado){
     st.textContent = '● conectado: ' + (r.nickname || 'sua loja');
