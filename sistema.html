@@ -141,6 +141,21 @@
   .kpi.open .kpi-hint{display:none}
   .kpi-exp .row{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;gap:8px}
   .kpi-exp .row .mono{font-family:var(--mono);font-weight:700;font-size:12.5px;text-align:right}
+
+  .per-controles{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px}
+  .per-campo label{display:block;font-size:12px;font-weight:500;margin-bottom:4px;color:var(--ink-soft)}
+  .per-campo input[type=date]{
+    font-family:var(--mono);font-size:13px;padding:8px 10px;border:1px solid var(--line);
+    border-radius:7px;background:#FBFCFA;color:var(--ink);
+  }
+  .per-campo input[type=date]:focus{outline:2px solid var(--accent);outline-offset:1px}
+  .per-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+  .pstat{background:#FAFBF9;border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-align:center}
+  .pstat-lbl{font-size:11.5px;color:var(--ink-soft);font-weight:600;letter-spacing:.03em;text-transform:uppercase}
+  .pstat-val{font-family:var(--mono);font-size:20px;font-weight:700;margin-top:4px}
+  .per-canais{display:flex;flex-direction:column;gap:7px;border-top:1px dashed var(--line);padding-top:12px}
+  .per-canais .row{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;gap:8px;max-width:420px}
+  .per-canais .row .mono{font-family:var(--mono);font-weight:700;font-size:12.5px}
   .filtros{display:flex;gap:6px;flex-wrap:wrap}
   .chip-f{
     font-family:var(--mono);font-size:11.5px;font-weight:700;border:1px solid var(--line);
@@ -270,6 +285,28 @@
           <div class="kpi-exp" id="e_msgs"></div>
           <div class="kpi-hint">clique para abrir por marketplace ▾</div>
         </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px">
+        <h3 style="font-family:var(--disp);font-size:13.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:14px">📅 Métricas por período</h3>
+        <div class="per-controles">
+          <div class="per-campo">
+            <label for="per_de">De</label>
+            <input type="date" id="per_de">
+          </div>
+          <div class="per-campo">
+            <label for="per_ate">Até</label>
+            <input type="date" id="per_ate">
+          </div>
+          <button class="btn btn-conn" id="btn_per_aplicar" style="width:auto">Aplicar</button>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--ink-soft)" id="per_aviso"></span>
+        </div>
+        <div class="per-stats">
+          <div class="pstat"><div class="pstat-lbl">Pedidos</div><div class="pstat-val" id="per_qtd">—</div></div>
+          <div class="pstat"><div class="pstat-lbl">Vendas</div><div class="pstat-val" id="per_vendas">—</div></div>
+          <div class="pstat"><div class="pstat-lbl">Ticket médio</div><div class="pstat-val" id="per_ticket">—</div></div>
+        </div>
+        <div class="per-canais" id="per_canais"></div>
       </div>
 
       <div class="card">
@@ -707,11 +744,65 @@ async function carregarPainel(){
   $('painel_info').textContent =
     'mês desde ' + mesIni.toLocaleDateString('pt-BR') +
     ' · com base nos últimos 50 pedidos · atualizado ' + new Date().toLocaleTimeString('pt-BR');
+
+  iniciarPeriodoPadrao();
 }
 
 document.querySelectorAll('.kpi').forEach(k =>
   k.addEventListener('click', ()=> k.classList.toggle('open')));
 $('btn_painel_refresh').addEventListener('click', ()=>{ pedidosCache = []; carregarPainel(); });
+
+/* ---------- métricas por período (seleção de datas) ---------- */
+const dataISO = d => d.toISOString().slice(0, 10);
+
+function calcularPeriodo(){
+  const deV = $('per_de').value, ateV = $('per_ate').value;
+  if (!deV || !ateV) return;
+  const de  = new Date(deV + 'T00:00:00');
+  const ate = new Date(ateV + 'T23:59:59');
+  if (de > ate){ $('per_aviso').textContent = 'a data inicial é maior que a final'; return; }
+
+  const validos = pedidosCache.filter(p => p.status !== 'cancelled' && p.envio !== 'cancelled');
+  const noPeriodo = validos.filter(p => { const d = new Date(p.data); return d >= de && d <= ate; });
+
+  const porCanal = {};
+  Object.keys(CANAIS).forEach(c => porCanal[c] = { vendas:0, qtd:0 });
+  let vendas = 0;
+  for (const p of noPeriodo){
+    const c = p.canal || 'ml';
+    vendas += p.total || 0;
+    porCanal[c].vendas += p.total || 0; porCanal[c].qtd++;
+  }
+
+  $('per_qtd').textContent = noPeriodo.length;
+  $('per_vendas').textContent = fmtBRL(vendas);
+  $('per_ticket').textContent = noPeriodo.length ? fmtBRL(vendas / noPeriodo.length) : '—';
+  $('per_canais').innerHTML = Object.keys(CANAIS).map(c =>
+    linhaCanal(c, c === 'ml' ? (fmtBRL(porCanal.ml.vendas) + ' · ' + porCanal.ml.qtd + ' pedido(s)') : 'em breve')
+  ).join('');
+
+  // alerta se o período pedido é mais antigo que o pedido mais velho carregado
+  let aviso = '';
+  if (pedidosCache.length){
+    const maisAntigo = new Date(Math.min(...pedidosCache.map(p => new Date(p.data).getTime())));
+    if (de < maisAntigo){
+      aviso = '⚠ período pode estar incompleto: base atual são os últimos 50 pedidos (mais antigo: ' + maisAntigo.toLocaleDateString('pt-BR') + ')';
+    }
+  }
+  $('per_aviso').textContent = aviso;
+}
+
+$('btn_per_aplicar').addEventListener('click', calcularPeriodo);
+$('per_de').addEventListener('change', calcularPeriodo);
+$('per_ate').addEventListener('change', calcularPeriodo);
+
+function iniciarPeriodoPadrao(){
+  if ($('per_de').value) { calcularPeriodo(); return; } // já tinha seleção: só recalcula
+  const hoje = new Date();
+  $('per_de').value = dataISO(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+  $('per_ate').value = dataISO(hoje);
+  calcularPeriodo();
+}
 
 /* ---------- retorno da autorização (?ml=ok / ?ml=erro) ---------- */
 (function(){
